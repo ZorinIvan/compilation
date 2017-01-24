@@ -21,6 +21,7 @@ extern int yyparse (void);
   //int yylex (void);
   void yyerror (const char*);
   void semanticError(string s);
+  void Debug(string s);
   
   SymbolTable symbol_table;
   StructTable struct_table;
@@ -58,14 +59,17 @@ extern int yyparse (void);
 %%
 /************************ C user routines **************************/
 PROGRAM: TDEFS FDEFS MAIN_FUNCTION {//TODO
-
+      //Debug
+  Debug("PROGRAM: TDEFS FDEFS MAIN_FUNCTION" );
                                    }
 ;
 //                            1     2            3    4        5  6  7
-TDEFS: {symbol_table.push();} TDEFS DEFSTRUCT_TOK LC DECLARLIST RC ID SC {//TODO
+TDEFS: M1 TDEFS DEFSTRUCT_TOK LC DECLARLIST RC ID SC {//TODO
 	// All fields of the struct are in the top of symbol table
 	// Define a new struct type
 	
+    //Debug
+  Debug("TDEFS: M1 TDEFS DEFSTRUCT_TOK LC DECLARLIST RC ID SC" );
 	if(struct_table.getOffset($6.content) > 0){
 		symbol_table.pop();
 		semanticError("struct with such name already exists");
@@ -92,7 +96,8 @@ TDEFS: {symbol_table.push();} TDEFS DEFSTRUCT_TOK LC DECLARLIST RC ID SC {//TODO
 ;	
 
 FDEFS: FDEFS TYPE ID LP FUNC_ARGLIST_FULL RP BLK {//TODO
-  
+  //Debug
+  Debug("FDEFS: FDEFS TYPE ID LP FUNC_ARGLIST_FULL RP BLK");
                                   }
                                 |
                                   FDEFS EXTERN_TOK TYPE ID LP FUNC_ARGLIST_FULL RP SC {//TODO
@@ -134,13 +139,15 @@ BLK: DECLARATIONS LC LIST RC {//TODO
                               }
 ;	
 
-DECLARATIONS: VAR_TOK {symbol_table.push();} DECLARLIST  
+DECLARATIONS: VAR_TOK M1 DECLARLIST  
 { 
 	/**
 	* 	All variables of the current scope are in the symbol table.
 	*	I1 must point to the stack frame and I2 will point to the top
 	*	of the stack. 
 	*/
+  //Debug
+  Debug("DECLARATIONS: VAR_TOK M1 DECLARLIST ");
 	
 	ostringstream os;
 	os << "ADD2I I2 I1 " << symbol_table.top().size();
@@ -162,10 +169,18 @@ DECLARLIST: DECLARLIST DCL SC
 
 DCL: ID COL TYPE 
 {
+    //Debug
+  Debug("DCL: ID COL TYPE ");
 	$$.content = $1.content;
 	$$.type = $3.type;
 	$$.offset = 1;
 	symbol_table.insert($1.content, $3.type, 1);
+        //Debug
+      ostringstream os1;
+      os1 << $$.content << " " << $$.type;
+      Debug("DCL: ID COL TYPE ");
+      Debug(os1.str());
+  
 } 
     |
 ID COL ID {
@@ -190,7 +205,7 @@ ID COM DCL {
 ;	
 
  TYPE: INT_TOK {
-                 $$.type = INT;
+         $$.type = INT;
                }
 
     | REAL_TOK {
@@ -361,7 +376,12 @@ BEXP: BEXP OR_OP M BEXP {
 		$$.false_list = $2.true_list;
 }
     | EXP REL_OP EXP {
-		
+      //Debug
+      ostringstream os1;
+      os1 << "$1: "<< $1.type << " $2: " << $3.type;
+      Debug("EXP REL_OP EXP");
+      Debug(os1.str());
+     
 		if($1.type != $3.type) {
 			semanticError("different types in REL_OP");
 		}
@@ -649,9 +669,16 @@ N: {
 	$$.next_list = makelist(g_buff.nextQuad());
 	g_buff.emit("UJUMP ");
 }
+
+M1: {
+  symbol_table.push();
+}
 	
 %%
-  
+ 
+void Debug(string s){
+  cout << s << endl;
+}
 
 void semanticError(string s) {
   printf("Semantic error: '%s' in line number %d\n", s.c_str(), yylineno);

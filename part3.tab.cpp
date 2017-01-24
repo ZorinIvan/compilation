@@ -86,13 +86,14 @@ extern int yyparse (void);
   //int yylex (void);
   void yyerror (const char*);
   void semanticError(string s);
+  void Debug(string s);
   
   SymbolTable symbol_table;
   StructTable struct_table;
   int gEntryOffset;
   Buffer g_buff;
 
-#line 96 "part3.tab.cpp" /* yacc.c:339  */
+#line 97 "part3.tab.cpp" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -180,7 +181,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 184 "part3.tab.cpp" /* yacc.c:358  */
+#line 185 "part3.tab.cpp" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -427,9 +428,9 @@ union yyalloc
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  37
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  30
+#define YYNNTS  29
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  65
+#define YYNRULES  64
 /* YYNSTATES -- Number of states.  */
 #define YYNSTATES  143
 
@@ -481,13 +482,13 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,    60,    60,    65,    65,    90,    94,    98,   101,   106,
-     109,   115,   119,   124,   127,   131,   137,   137,   150,   155,
-     158,   163,   171,   184,   192,   196,   201,   205,   211,   213,
-     217,   219,   221,   223,   226,   231,   240,   256,   270,   308,
-     325,   330,   335,   340,   348,   353,   359,   363,   416,   422,
-     444,   466,   471,   487,   514,   548,   559,   565,   595,   622,
-     627,   630,   634,   638,   644,   648
+       0,    61,    61,    67,    94,    98,   103,   106,   111,   114,
+     120,   124,   129,   132,   136,   142,   157,   162,   165,   170,
+     186,   199,   207,   211,   216,   220,   226,   228,   232,   234,
+     236,   238,   241,   246,   255,   271,   285,   323,   340,   345,
+     350,   355,   363,   368,   374,   378,   436,   442,   464,   486,
+     491,   507,   534,   568,   579,   585,   615,   642,   647,   650,
+     654,   658,   664,   668,   673
 };
 #endif
 
@@ -501,11 +502,11 @@ static const char *const yytname[] =
   "THEN_TOK", "ELSE_TOK", "MAIN_TOK", "VAR_TOK", "CALL_TOK", "RETURN_TOK",
   "DEFSTRUCT_TOK", "EXTERN_TOK", "COM", "SC", "COL", "ASSIGN_OP", "OR_OP",
   "AND_OP", "REL_OP", "ADD_OP", "MUL_OP", "NOT_OP", "LP", "RP", "LC", "RC",
-  "LS", "RS", "$accept", "PROGRAM", "TDEFS", "$@1", "FDEFS",
-  "FUNC_ARGLIST_FULL", "FUNC_ARGLIST", "MAIN_FUNCTION", "BLK",
-  "DECLARATIONS", "$@2", "DECLARLIST", "DCL", "TYPE", "LIST", "STMT",
-  "STMT_RETURN", "WRITE", "READ", "ASSN", "LVAL", "CNTRL", "BEXP", "EXP",
-  "STREF", "CALL", "CALL_ARGS_FULL", "CALL_ARGS", "M", "N", YY_NULLPTR
+  "LS", "RS", "$accept", "PROGRAM", "TDEFS", "FDEFS", "FUNC_ARGLIST_FULL",
+  "FUNC_ARGLIST", "MAIN_FUNCTION", "BLK", "DECLARATIONS", "DECLARLIST",
+  "DCL", "TYPE", "LIST", "STMT", "STMT_RETURN", "WRITE", "READ", "ASSN",
+  "LVAL", "CNTRL", "BEXP", "EXP", "STREF", "CALL", "CALL_ARGS_FULL",
+  "CALL_ARGS", "M", "N", "M1", YY_NULLPTR
 };
 #endif
 
@@ -526,7 +527,7 @@ static const yytype_uint16 yytoknum[] =
 #define yypact_value_is_default(Yystate) \
   (!!((Yystate) == (-65)))
 
-#define YYTABLE_NINF -4
+#define YYTABLE_NINF -65
 
 #define yytable_value_is_error(Yytable_value) \
   0
@@ -557,37 +558,37 @@ static const yytype_int16 yypact[] =
      means the default is an error.  */
 static const yytype_uint8 yydefact[] =
 {
-       5,     0,     8,     3,     1,    14,     0,    25,    24,    18,
-       0,     2,     0,     0,    16,    13,     0,     0,     0,     0,
-       0,    27,     0,    10,     0,     0,     0,    17,    64,    10,
-       0,     9,    12,     0,     0,     0,     0,    20,    15,    18,
-       0,    18,     0,    23,    22,    21,     0,    19,    39,     0,
-       0,    64,     0,     0,    33,    26,    32,    31,    30,    28,
-       0,    29,    40,     0,     6,    11,     4,     0,     0,     0,
-       0,    55,    53,     0,     0,     0,     0,     0,    54,    56,
-       0,     0,     0,     7,     0,     0,     0,     0,     0,     0,
-       0,    46,     0,     0,     0,    64,    64,    64,     0,     0,
-       0,     0,     0,     0,    57,     0,     0,     0,     0,    64,
-      61,     0,    48,    51,    18,     0,     0,    47,    49,    50,
-       0,    38,    58,    36,    35,    37,    18,    62,     0,    60,
-      52,    42,    44,    45,    34,    43,    59,     0,    65,    63,
-      64,    18,    41
+       4,     0,     7,     4,     1,    13,     0,    23,    22,    16,
+       0,     2,     0,     0,    64,    12,     0,     0,     0,     0,
+       0,    25,     0,     9,     0,     0,     0,    15,    62,     9,
+       0,     8,    11,     0,     0,     0,     0,    18,    14,    16,
+       0,    16,     0,    21,    20,    19,     0,    17,    37,     0,
+       0,    62,     0,     0,    31,    24,    30,    29,    28,    26,
+       0,    27,    38,     0,     5,    10,     3,     0,     0,     0,
+       0,    53,    51,     0,     0,     0,     0,     0,    52,    54,
+       0,     0,     0,     6,     0,     0,     0,     0,     0,     0,
+       0,    44,     0,     0,     0,    62,    62,    62,     0,     0,
+       0,     0,     0,     0,    55,     0,     0,     0,     0,    62,
+      59,     0,    46,    49,    16,     0,     0,    45,    47,    48,
+       0,    36,    56,    34,    33,    35,    16,    60,     0,    58,
+      50,    40,    42,    43,    32,    41,    57,     0,    63,    61,
+      62,    16,    39
 };
 
   /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int16 yypgoto[] =
 {
-     -65,   -65,   158,   -65,   -65,   136,   -65,   -65,    -7,   -65,
-     -65,   144,    55,     7,   -65,   -52,   -65,   -65,   -65,   -65,
-      99,   -65,   -64,   -61,   -39,   -65,   -65,   -65,   -50,   -65
+     -65,   -65,   158,   -65,   136,   -65,   -65,    -7,   -65,   144,
+      55,     7,   -65,   -52,   -65,   -65,   -65,   -65,    99,   -65,
+     -64,   -61,   -39,   -65,   -65,   -65,   -50,   -65,   152
 };
 
   /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int16 yydefgoto[] =
 {
-      -1,     1,     2,     3,     5,    30,    31,    11,    54,    16,
-      20,    25,    26,    92,    28,    55,    56,    57,    58,    59,
-      60,    61,    76,    77,    78,    79,   128,   129,    39,   140
+      -1,     1,     2,     5,    30,    31,    11,    54,    16,    25,
+      26,    92,    28,    55,    56,    57,    58,    59,    60,    61,
+      76,    77,    78,    79,   128,   129,    39,   140,     3
 };
 
   /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -599,7 +600,7 @@ static const yytype_int16 yytable[] =
       91,    93,    12,     9,    94,     7,     8,    17,    10,   101,
      102,    44,    73,     7,     8,   106,    71,    72,    71,    72,
       62,     7,     8,    35,    64,    74,    75,   117,   118,   119,
-      73,    45,    73,    99,   100,   114,   115,   116,    -3,   127,
+      73,    45,    73,    99,   100,   114,   115,   116,   -64,   127,
      130,   132,   133,   109,    86,    74,    75,    71,    72,   126,
        7,     8,   131,    71,    72,    85,     4,    96,    97,    13,
       19,    73,    96,    97,   135,    62,   139,    73,    32,   112,
@@ -611,7 +612,7 @@ static const yytype_int16 yytable[] =
       34,    29,    42,    46,    47,    63,    66,    68,    83,    69,
       67,    80,    81,    84,    82,    48,    90,   103,   110,   104,
      123,   105,   108,   111,   124,   125,   100,   134,   122,   137,
-     138,     6,   136,    97,    27,    40,     0,     0,    88
+     138,     6,   136,    97,    27,    40,    20,     0,    88
 };
 
 static const yytype_int16 yycheck[] =
@@ -632,52 +633,52 @@ static const yytype_int16 yycheck[] =
       23,    31,    21,     4,    22,    32,    22,    31,    22,    31,
       35,    31,    24,     4,    35,     4,     4,     4,    31,    36,
       22,    32,    32,    32,    22,    22,    29,    22,    36,    21,
-      14,     3,    32,    26,    20,    29,    -1,    -1,    69
+      14,     3,    32,    26,    20,    29,    14,    -1,    69
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
      symbol of state STATE-NUM.  */
 static const yytype_uint8 yystos[] =
 {
-       0,    38,    39,    40,     0,    41,    39,     6,     7,    15,
-      20,    44,    50,    19,    16,    45,    46,    50,     4,    33,
-      47,    33,     4,    31,     4,    48,    49,    48,    51,    31,
-      42,    43,    49,    21,    23,    34,    49,    22,    34,    65,
-      42,    32,    21,    49,     4,    50,     4,    22,     4,     8,
-       9,    10,    12,    18,    45,    52,    53,    54,    55,    56,
-      57,    58,    61,    32,    45,    49,    22,    35,    31,    31,
-      65,     3,     4,    17,    30,    31,    59,    60,    61,    62,
-      31,    24,    35,    22,     4,     5,    31,    60,    57,    59,
-       4,    59,    50,    59,    60,    13,    25,    26,    27,    28,
-      29,    60,    60,     4,    36,    32,    60,    32,    32,    11,
-      31,    32,    32,    32,    65,    65,    65,    60,    60,    60,
-      32,    22,    36,    22,    22,    22,    65,    60,    63,    64,
-      60,    52,    59,    59,    22,    52,    32,    21,    14,    60,
-      66,    65,    52
+       0,    38,    39,    65,     0,    40,    39,     6,     7,    15,
+      20,    43,    48,    19,    16,    44,    45,    48,     4,    33,
+      65,    33,     4,    31,     4,    46,    47,    46,    49,    31,
+      41,    42,    47,    21,    23,    34,    47,    22,    34,    63,
+      41,    32,    21,    47,     4,    48,     4,    22,     4,     8,
+       9,    10,    12,    18,    44,    50,    51,    52,    53,    54,
+      55,    56,    59,    32,    44,    47,    22,    35,    31,    31,
+      63,     3,     4,    17,    30,    31,    57,    58,    59,    60,
+      31,    24,    35,    22,     4,     5,    31,    58,    55,    57,
+       4,    57,    48,    57,    58,    13,    25,    26,    27,    28,
+      29,    58,    58,     4,    36,    32,    58,    32,    32,    11,
+      31,    32,    32,    32,    63,    63,    63,    58,    58,    58,
+      32,    22,    36,    22,    22,    22,    63,    58,    61,    62,
+      58,    50,    57,    57,    22,    50,    32,    21,    14,    58,
+      64,    63,    50
 };
 
   /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_uint8 yyr1[] =
 {
-       0,    37,    38,    40,    39,    39,    41,    41,    41,    42,
-      42,    43,    43,    44,    44,    45,    47,    46,    46,    48,
-      48,    49,    49,    49,    50,    50,    51,    51,    52,    52,
-      52,    52,    52,    52,    53,    54,    54,    55,    56,    57,
-      57,    58,    58,    58,    59,    59,    59,    59,    59,    60,
-      60,    60,    60,    60,    60,    60,    60,    61,    61,    62,
-      63,    63,    64,    64,    65,    66
+       0,    37,    38,    39,    39,    40,    40,    40,    41,    41,
+      42,    42,    43,    43,    44,    45,    45,    46,    46,    47,
+      47,    47,    48,    48,    49,    49,    50,    50,    50,    50,
+      50,    50,    51,    52,    52,    53,    54,    55,    55,    56,
+      56,    56,    57,    57,    57,    57,    57,    58,    58,    58,
+      58,    58,    58,    58,    58,    59,    59,    60,    61,    61,
+      62,    62,    63,    64,    65
 };
 
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
 static const yytype_uint8 yyr2[] =
 {
-       0,     2,     3,     0,     8,     0,     7,     8,     0,     1,
-       0,     3,     1,     2,     0,     4,     0,     3,     0,     3,
-       2,     3,     3,     3,     1,     1,     3,     0,     1,     1,
-       1,     1,     1,     1,     5,     5,     5,     5,     4,     1,
-       1,     9,     5,     6,     4,     4,     2,     3,     3,     3,
-       3,     3,     4,     1,     1,     1,     1,     4,     4,     5,
-       1,     0,     1,     3,     0,     0
+       0,     2,     3,     8,     0,     7,     8,     0,     1,     0,
+       3,     1,     2,     0,     4,     3,     0,     3,     2,     3,
+       3,     3,     1,     1,     3,     0,     1,     1,     1,     1,
+       1,     1,     5,     5,     5,     5,     4,     1,     1,     9,
+       5,     6,     4,     4,     2,     3,     3,     3,     3,     3,
+       4,     1,     1,     1,     1,     4,     4,     5,     1,     0,
+       1,     3,     0,     0,     0
 };
 
 
@@ -1354,25 +1355,22 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 60 "part3.ypp" /* yacc.c:1646  */
+#line 61 "part3.ypp" /* yacc.c:1646  */
     {//TODO
-
+      //Debug
+  Debug("PROGRAM: TDEFS FDEFS MAIN_FUNCTION" );
                                    }
-#line 1362 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1364 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 65 "part3.ypp" /* yacc.c:1646  */
-    {symbol_table.push();}
-#line 1368 "part3.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 4:
-#line 65 "part3.ypp" /* yacc.c:1646  */
+#line 67 "part3.ypp" /* yacc.c:1646  */
     {//TODO
 	// All fields of the struct are in the top of symbol table
 	// Define a new struct type
 	
+    //Debug
+  Debug("TDEFS: M1 TDEFS DEFSTRUCT_TOK LC DECLARLIST RC ID SC" );
 	if(struct_table.getOffset((yyvsp[-2]).content) > 0){
 		symbol_table.pop();
 		semanticError("struct with such name already exists");
@@ -1394,116 +1392,121 @@ yyreduce:
 	}
 
  }
-#line 1398 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1396 "part3.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 5:
+#line 98 "part3.ypp" /* yacc.c:1646  */
+    {//TODO
+  //Debug
+  Debug("FDEFS: FDEFS TYPE ID LP FUNC_ARGLIST_FULL RP BLK");
+                                  }
+#line 1405 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 6:
-#line 94 "part3.ypp" /* yacc.c:1646  */
-    {//TODO
-  
-                                  }
-#line 1406 "part3.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 7:
-#line 98 "part3.ypp" /* yacc.c:1646  */
+#line 103 "part3.ypp" /* yacc.c:1646  */
     {//TODO
 
                                   }
-#line 1414 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1413 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 9:
-#line 106 "part3.ypp" /* yacc.c:1646  */
+  case 8:
+#line 111 "part3.ypp" /* yacc.c:1646  */
     {//TODO
                             
                                   }
-#line 1422 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1421 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 11:
-#line 115 "part3.ypp" /* yacc.c:1646  */
+  case 10:
+#line 120 "part3.ypp" /* yacc.c:1646  */
     {//TODO
              
                                   }
-#line 1430 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1429 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 12:
-#line 119 "part3.ypp" /* yacc.c:1646  */
+  case 11:
+#line 124 "part3.ypp" /* yacc.c:1646  */
     {//TODO
                     
                                   }
-#line 1438 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1437 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 13:
-#line 124 "part3.ypp" /* yacc.c:1646  */
+  case 12:
+#line 129 "part3.ypp" /* yacc.c:1646  */
     {//TODO
     
                                   }
-#line 1446 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1445 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 15:
-#line 131 "part3.ypp" /* yacc.c:1646  */
+  case 14:
+#line 136 "part3.ypp" /* yacc.c:1646  */
     {//TODO
      // end of scope
 	 symbol_table.pop();
                               }
-#line 1455 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1454 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 16:
-#line 137 "part3.ypp" /* yacc.c:1646  */
-    {symbol_table.push();}
-#line 1461 "part3.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 17:
-#line 138 "part3.ypp" /* yacc.c:1646  */
+  case 15:
+#line 143 "part3.ypp" /* yacc.c:1646  */
     { 
 	/**
 	* 	All variables of the current scope are in the symbol table.
 	*	I1 must point to the stack frame and I2 will point to the top
 	*	of the stack. 
 	*/
+  //Debug
+  Debug("DECLARATIONS: VAR_TOK M1 DECLARLIST ");
 	
 	ostringstream os;
 	os << "ADD2I I2 I1 " << symbol_table.top().size();
 	g_buff.emit(os.str());		
 	
 }
-#line 1478 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1473 "part3.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 17:
+#line 163 "part3.ypp" /* yacc.c:1646  */
+    {
+}
+#line 1480 "part3.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 18:
+#line 166 "part3.ypp" /* yacc.c:1646  */
+    {
+}
+#line 1487 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 19:
-#line 156 "part3.ypp" /* yacc.c:1646  */
+#line 171 "part3.ypp" /* yacc.c:1646  */
     {
-}
-#line 1485 "part3.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 20:
-#line 159 "part3.ypp" /* yacc.c:1646  */
-    {
-}
-#line 1492 "part3.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 21:
-#line 164 "part3.ypp" /* yacc.c:1646  */
-    {
+    //Debug
+  Debug("DCL: ID COL TYPE ");
 	(yyval).content = (yyvsp[-2]).content;
 	(yyval).type = (yyvsp[0]).type;
 	(yyval).offset = 1;
 	symbol_table.insert((yyvsp[-2]).content, (yyvsp[0]).type, 1);
+        //Debug
+      ostringstream os1;
+      os1 << (yyval).content << " " << (yyval).type;
+      Debug("DCL: ID COL TYPE ");
+      Debug(os1.str());
+  
 }
-#line 1503 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1506 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 22:
-#line 171 "part3.ypp" /* yacc.c:1646  */
+  case 20:
+#line 186 "part3.ypp" /* yacc.c:1646  */
     {
 	int offset = struct_table.getOffset((yyvsp[0]).content); //check if struct $3 exists
 	if (offset == -1){
@@ -1515,93 +1518,93 @@ yyreduce:
 	symbol_table.insertStruct((yyvsp[-2]).content, (yyvsp[0]).content, offset);
 	
 }
-#line 1519 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1522 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 23:
-#line 184 "part3.ypp" /* yacc.c:1646  */
+  case 21:
+#line 199 "part3.ypp" /* yacc.c:1646  */
     {
 	(yyval).content = (yyvsp[-2]).content;
 	(yyval).type = (yyvsp[0]).type;
 	(yyval).offset = (yyvsp[0]).offset;
 	symbol_table.insert((yyvsp[-2]).content, (yyvsp[0]).type, 1);
 }
-#line 1530 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1533 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 24:
-#line 192 "part3.ypp" /* yacc.c:1646  */
+  case 22:
+#line 207 "part3.ypp" /* yacc.c:1646  */
     {
-                 (yyval).type = INT;
+         (yyval).type = INT;
                }
-#line 1538 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1541 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 25:
-#line 196 "part3.ypp" /* yacc.c:1646  */
+  case 23:
+#line 211 "part3.ypp" /* yacc.c:1646  */
     {
 				 (yyval).type = REAL;
 				}
-#line 1546 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1549 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 26:
-#line 201 "part3.ypp" /* yacc.c:1646  */
+  case 24:
+#line 216 "part3.ypp" /* yacc.c:1646  */
     {
            (yyval).next_list = (yyvsp[0]).next_list;
 		   g_buff.backpatch((yyvsp[-1]).next_list, (yyvsp[-1]).address);
 }
-#line 1555 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1558 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 28:
-#line 211 "part3.ypp" /* yacc.c:1646  */
+  case 26:
+#line 226 "part3.ypp" /* yacc.c:1646  */
     { }
-#line 1561 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1564 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 29:
-#line 213 "part3.ypp" /* yacc.c:1646  */
+  case 27:
+#line 228 "part3.ypp" /* yacc.c:1646  */
     {
                               (yyval).next_list = (yyvsp[0]).next_list;
                                 }
-#line 1569 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1572 "part3.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 28:
+#line 232 "part3.ypp" /* yacc.c:1646  */
+    {}
+#line 1578 "part3.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 29:
+#line 234 "part3.ypp" /* yacc.c:1646  */
+    {}
+#line 1584 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 30:
-#line 217 "part3.ypp" /* yacc.c:1646  */
+#line 236 "part3.ypp" /* yacc.c:1646  */
     {}
-#line 1575 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1590 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 31:
-#line 219 "part3.ypp" /* yacc.c:1646  */
+#line 238 "part3.ypp" /* yacc.c:1646  */
     {}
-#line 1581 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1596 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
   case 32:
-#line 221 "part3.ypp" /* yacc.c:1646  */
-    {}
-#line 1587 "part3.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 33:
-#line 223 "part3.ypp" /* yacc.c:1646  */
-    {}
-#line 1593 "part3.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 34:
-#line 226 "part3.ypp" /* yacc.c:1646  */
+#line 241 "part3.ypp" /* yacc.c:1646  */
     {//TODO
     
 }
-#line 1601 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1604 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 35:
-#line 231 "part3.ypp" /* yacc.c:1646  */
+  case 33:
+#line 246 "part3.ypp" /* yacc.c:1646  */
     {
 	if ((yyvsp[-2]).type == INT) {
 		g_buff.emit("PRNTI " + (yyvsp[-2]).place);
@@ -1610,11 +1613,11 @@ yyreduce:
 		g_buff.emit("PRNTR " + (yyvsp[-2]).place);
 	}		
    }
-#line 1614 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1617 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 36:
-#line 240 "part3.ypp" /* yacc.c:1646  */
+  case 34:
+#line 255 "part3.ypp" /* yacc.c:1646  */
     {
 		for(int i = 0; i < (yyvsp[-2]).content.length(); i++){
 			char currSymbol = (yyvsp[-2]).content[i];
@@ -1629,11 +1632,11 @@ yyreduce:
 			g_buff.emit("PRNTC " + to_string((int)currSymbol));
 		}
     }
-#line 1633 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1636 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 37:
-#line 256 "part3.ypp" /* yacc.c:1646  */
+  case 35:
+#line 271 "part3.ypp" /* yacc.c:1646  */
     {
 
 		string emittedRead = ((yyvsp[-2]).type == INT)?"READI ":"READR ";
@@ -1646,11 +1649,11 @@ yyreduce:
 		// store the temporary register to memory:
 		g_buff.emit(emittedStore + tempRegister + " " + (yyvsp[-2]).place + " 0");     
 	}
-#line 1650 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1653 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 38:
-#line 270 "part3.ypp" /* yacc.c:1646  */
+  case 36:
+#line 285 "part3.ypp" /* yacc.c:1646  */
     {
 	Type lValType = (yyvsp[-3]).type, rValType = (yyvsp[-1]).type;
 	ostringstream os;
@@ -1686,11 +1689,11 @@ yyreduce:
 		g_buff.emit(os.str());
 	}
 }
-#line 1690 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1693 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 39:
-#line 308 "part3.ypp" /* yacc.c:1646  */
+  case 37:
+#line 323 "part3.ypp" /* yacc.c:1646  */
     {
 	SymbolEntry sEntry = symbol_table.get((yyvsp[0]).content);
 	 //check that a variable is declared
@@ -1707,80 +1710,85 @@ yyreduce:
 		os << "ADD2I " << (yyval).place << " I1 " << (yyval).offset;
 		g_buff.emit(os.str());
 }
-#line 1711 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1714 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 40:
-#line 325 "part3.ypp" /* yacc.c:1646  */
+  case 38:
+#line 340 "part3.ypp" /* yacc.c:1646  */
     {//TODO
             (yyval) = (yyvsp[0]);                 
      }
-#line 1719 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1722 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 41:
-#line 330 "part3.ypp" /* yacc.c:1646  */
+  case 39:
+#line 345 "part3.ypp" /* yacc.c:1646  */
     {
 	g_buff.backpatch((yyvsp[-7]).true_list, (yyvsp[-5]).address);
 	g_buff.backpatch((yyvsp[-7]).false_list, (yyvsp[-1]).address);
 	(yyval).next_list = merge(merge((yyvsp[-4]).next_list, (yyvsp[0]).next_list), (yyvsp[-2]).next_list);
 }
-#line 1729 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1732 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 42:
-#line 335 "part3.ypp" /* yacc.c:1646  */
+  case 40:
+#line 350 "part3.ypp" /* yacc.c:1646  */
     {
 			g_buff.backpatch((yyvsp[-3]).true_list, (yyvsp[-1]).address);
 			(yyval).next_list = merge((yyvsp[-3]).false_list, (yyvsp[0]).next_list);
 }
-#line 1738 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1741 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 43:
-#line 340 "part3.ypp" /* yacc.c:1646  */
+  case 41:
+#line 355 "part3.ypp" /* yacc.c:1646  */
     {
 			g_buff.backpatch((yyvsp[-3]).true_list,(yyvsp[-1]).address);
 			g_buff.backpatch((yyvsp[0]).next_list,(yyvsp[-4]).address);
 			(yyval).next_list = (yyvsp[-3]).false_list;
 			g_buff.emit("UJUMP " + to_string((yyvsp[-4]).address));
 }
-#line 1749 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1752 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 44:
-#line 348 "part3.ypp" /* yacc.c:1646  */
+  case 42:
+#line 363 "part3.ypp" /* yacc.c:1646  */
     {
 	g_buff.backpatch((yyvsp[-3]).false_list, (yyvsp[-1]).address);
 	(yyval).false_list = (yyvsp[0]).false_list;
 	(yyval).true_list = merge((yyvsp[-3]).true_list, (yyvsp[0]).true_list);
   }
-#line 1759 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1762 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 45:
-#line 353 "part3.ypp" /* yacc.c:1646  */
+  case 43:
+#line 368 "part3.ypp" /* yacc.c:1646  */
     {
 		g_buff.backpatch((yyvsp[-3]).true_list, (yyvsp[-1]).address);
 		(yyval).false_list = merge((yyvsp[-3]).false_list, (yyvsp[0]).false_list);
 		(yyval).true_list = (yyvsp[0]).true_list;
 }
-#line 1769 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1772 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 46:
-#line 359 "part3.ypp" /* yacc.c:1646  */
+  case 44:
+#line 374 "part3.ypp" /* yacc.c:1646  */
     {
 		(yyval).true_list = (yyvsp[0]).false_list;
 		(yyval).false_list = (yyvsp[0]).true_list;
 }
-#line 1778 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1781 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 47:
-#line 363 "part3.ypp" /* yacc.c:1646  */
+  case 45:
+#line 378 "part3.ypp" /* yacc.c:1646  */
     {
-		
+      //Debug
+      ostringstream os1;
+      os1 << "$1: "<< (yyvsp[-2]).type << " $2: " << (yyvsp[0]).type;
+      Debug("EXP REL_OP EXP");
+      Debug(os1.str());
+     
 		if((yyvsp[-2]).type != (yyvsp[0]).type) {
 			semanticError("different types in REL_OP");
 		}
@@ -1832,20 +1840,20 @@ yyreduce:
 			semanticError("unknown types in REL_OP");
 		}
 }
-#line 1836 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1844 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 48:
-#line 416 "part3.ypp" /* yacc.c:1646  */
+  case 46:
+#line 436 "part3.ypp" /* yacc.c:1646  */
     {
 		(yyval).true_list = (yyvsp[-1]).true_list;
 		(yyval).false_list = (yyvsp[-1]).false_list;	
 }
-#line 1845 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1853 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 49:
-#line 423 "part3.ypp" /* yacc.c:1646  */
+  case 47:
+#line 443 "part3.ypp" /* yacc.c:1646  */
     {		
 		if(((yyvsp[-2]).type != (yyvsp[0]).type) || (yyvsp[-2]).type == STRUCT || (yyvsp[0]).type == STRUCT ){
 			semanticError("type missmatch within add operation");
@@ -1866,11 +1874,11 @@ yyreduce:
 		}
 								
     }
-#line 1870 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1878 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 50:
-#line 445 "part3.ypp" /* yacc.c:1646  */
+  case 48:
+#line 465 "part3.ypp" /* yacc.c:1646  */
     {
 		if(((yyvsp[-2]).type != (yyvsp[0]).type) || (yyvsp[-2]).type == STRUCT || (yyvsp[0]).type == STRUCT){
 			semanticError("type missmatch within mult operation");
@@ -1891,19 +1899,19 @@ yyreduce:
 		}
 			
    }
-#line 1895 "part3.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 51:
-#line 467 "part3.ypp" /* yacc.c:1646  */
-    {
-		(yyval) = (yyvsp[-1]);
-    }
 #line 1903 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 52:
-#line 472 "part3.ypp" /* yacc.c:1646  */
+  case 49:
+#line 487 "part3.ypp" /* yacc.c:1646  */
+    {
+		(yyval) = (yyvsp[-1]);
+    }
+#line 1911 "part3.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 50:
+#line 492 "part3.ypp" /* yacc.c:1646  */
     {
 			(yyval).type = (yyvsp[-2]).type;
 			(yyval).place = Register::getNewReg((yyval).type);
@@ -1917,11 +1925,11 @@ yyreduce:
 			}
 		
     }
-#line 1921 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1929 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 53:
-#line 487 "part3.ypp" /* yacc.c:1646  */
+  case 51:
+#line 507 "part3.ypp" /* yacc.c:1646  */
     {
 		 
 		 SymbolEntry sEntry = symbol_table.get((yyvsp[0]).content);
@@ -1947,11 +1955,11 @@ yyreduce:
 		g_buff.emit(os.str());		
 		
         }
-#line 1951 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1959 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 54:
-#line 514 "part3.ypp" /* yacc.c:1646  */
+  case 52:
+#line 534 "part3.ypp" /* yacc.c:1646  */
     {
 		 /* 
 		  * $1 is a field in the struct.
@@ -1985,11 +1993,11 @@ yyreduce:
 			  (yyval) = (yyvsp[0]);
 		  }
  }
-#line 1989 "part3.tab.cpp" /* yacc.c:1646  */
+#line 1997 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 55:
-#line 548 "part3.ypp" /* yacc.c:1646  */
+  case 53:
+#line 568 "part3.ypp" /* yacc.c:1646  */
     {
 			(yyval).type = (yyvsp[0]).type;
 			(yyval).place = Register::getNewReg((yyval).type);
@@ -2000,20 +2008,20 @@ yyreduce:
 				g_buff.emit("COPYI " + (yyval).place + " " + (yyvsp[0]).content);
 			}
          }
-#line 2004 "part3.tab.cpp" /* yacc.c:1646  */
+#line 2012 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 56:
-#line 559 "part3.ypp" /* yacc.c:1646  */
+  case 54:
+#line 579 "part3.ypp" /* yacc.c:1646  */
     {
                 (yyval).type = (yyvsp[0]).type;
 				(yyval).place = (yyvsp[0]).place;
 			}
-#line 2013 "part3.tab.cpp" /* yacc.c:1646  */
+#line 2021 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 57:
-#line 565 "part3.ypp" /* yacc.c:1646  */
+  case 55:
+#line 585 "part3.ypp" /* yacc.c:1646  */
     {
 		SymbolEntry sEntry = symbol_table.get((yyvsp[-3]).content); //get a variable from the symbol table
 		 //check that a variable is declared
@@ -2044,11 +2052,11 @@ yyreduce:
 		
 
 }
-#line 2048 "part3.tab.cpp" /* yacc.c:1646  */
+#line 2056 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 58:
-#line 595 "part3.ypp" /* yacc.c:1646  */
+  case 56:
+#line 615 "part3.ypp" /* yacc.c:1646  */
     {
 	if((yyvsp[-3]).type != STRUCT){
 		semanticError("not a struct");
@@ -2074,60 +2082,68 @@ yyreduce:
 	}		
 	
 }
-#line 2078 "part3.tab.cpp" /* yacc.c:1646  */
-    break;
-
-  case 59:
-#line 622 "part3.ypp" /* yacc.c:1646  */
-    {//TODO
-
-                          }
 #line 2086 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 60:
-#line 627 "part3.ypp" /* yacc.c:1646  */
+  case 57:
+#line 642 "part3.ypp" /* yacc.c:1646  */
     {//TODO
-                            
+
                           }
 #line 2094 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 62:
-#line 634 "part3.ypp" /* yacc.c:1646  */
+  case 58:
+#line 647 "part3.ypp" /* yacc.c:1646  */
     {//TODO
-             
-               }
+                            
+                          }
 #line 2102 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 63:
-#line 638 "part3.ypp" /* yacc.c:1646  */
+  case 60:
+#line 654 "part3.ypp" /* yacc.c:1646  */
     {//TODO
-
-                        }
+             
+               }
 #line 2110 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 64:
-#line 644 "part3.ypp" /* yacc.c:1646  */
-    {
-	(yyval).address = g_buff.nextQuad();
-}
+  case 61:
+#line 658 "part3.ypp" /* yacc.c:1646  */
+    {//TODO
+
+                        }
 #line 2118 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
-  case 65:
-#line 648 "part3.ypp" /* yacc.c:1646  */
+  case 62:
+#line 664 "part3.ypp" /* yacc.c:1646  */
+    {
+	(yyval).address = g_buff.nextQuad();
+}
+#line 2126 "part3.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 63:
+#line 668 "part3.ypp" /* yacc.c:1646  */
     {
 	(yyval).next_list = makelist(g_buff.nextQuad());
 	g_buff.emit("UJUMP ");
 }
-#line 2127 "part3.tab.cpp" /* yacc.c:1646  */
+#line 2135 "part3.tab.cpp" /* yacc.c:1646  */
+    break;
+
+  case 64:
+#line 673 "part3.ypp" /* yacc.c:1646  */
+    {
+  symbol_table.push();
+}
+#line 2143 "part3.tab.cpp" /* yacc.c:1646  */
     break;
 
 
-#line 2131 "part3.tab.cpp" /* yacc.c:1646  */
+#line 2147 "part3.tab.cpp" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2355,9 +2371,12 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 653 "part3.ypp" /* yacc.c:1906  */
+#line 677 "part3.ypp" /* yacc.c:1906  */
 
-  
+ 
+void Debug(string s){
+  cout << s << endl;
+}
 
 void semanticError(string s) {
   printf("Semantic error: '%s' in line number %d\n", s.c_str(), yylineno);

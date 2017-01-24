@@ -1,8 +1,8 @@
 %{
 	
 /* Declarations section */
-#include <stdlib.h>
-#include <stdio.h>
+
+#include <iostream>
 #include "attributes.hpp"
 #include "part3.tab.hpp"
 #define NUM_OF_RULES 25
@@ -60,17 +60,17 @@ call						{createYylval(11, NULL); return CALL_TOK;}
 return						{createYylval(12, NULL); return RETURN_TOK;}
 defstruct					{createYylval(13, NULL); return DEFSTRUCT_TOK;}
 extern						{createYylval(14, NULL); return EXTERN_TOK;}
-==|<>|<|<=|>|>= 			{createYylval(15, yytext); return REL_OP;}
-[+-]					    {createYylval(16, yytext); return ADD_OP;}
-[*/]					    {createYylval(17, yytext); return MUL_OP;}
-\=						  	{createYylval(18, yytext); return ASSIGN_OP;}
-&&						    {createYylval(19, yytext); return AND_OP;}
-\|\|					    {createYylval(20, yytext); return OR_OP;}
-!						    {createYylval(21, yytext); return NOT_OP;}
-({int})						{createYylval(22, yytext); yylval.type = INT; return NUM;}
-({real})					{createYylval(22, yytext); yylval.type = REAL; return NUM;}
-({id})						{createYylval(23, yytext); return ID;}
-({str})						{char* res = strdup(yytext); res++; *(res+strlen(res)-1) = '\0'; createYylval(24, res); return STRING;}
+==|<>|<|<=|>|>= 			{createYylval(-1, yytext); return REL_OP;} 
+[+-]					    {createYylval(-1, yytext); return ADD_OP;}
+[*/]					    {createYylval(-1, yytext); return MUL_OP;}
+\=						  	{createYylval(-18, yytext); return ASSIGN_OP;}
+&&						    {createYylval(-19, yytext); return AND_OP;}
+\|\|					    {createYylval(-20, yytext); return OR_OP;}
+!						    {createYylval(-21, yytext); return NOT_OP;}
+({int})						{createYylval(-22, yytext); yylval.type = INT; return NUM;}
+({real})					{createYylval(-22, yytext); yylval.type = REAL; return NUM;}
+({id})						{createYylval(-23, yytext); return ID;}
+({str})						{char* res = strdup(yytext); res++; *(res+strlen(res)-1) = '\0'; createYylval( -24, res); return STRING;}
 
 
 .           	printf( "\nLexical error: '%s' in line number %d\n", yytext, yylineno ); exit(1);
@@ -78,8 +78,12 @@ extern						{createYylval(14, NULL); return EXTERN_TOK;}
 %%
 
 void createYylval(int num, char* str){
-	yylval.content = rules[num];
-	//yylval.type = NULL;
+	if(num >= 0){
+		yylval.content = rules[num];
+		return;
+	}
+	yylval.content = str;
+	return;
 }
 
 

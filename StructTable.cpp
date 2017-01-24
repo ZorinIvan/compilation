@@ -34,3 +34,17 @@ int  StructTable::getOffset(string structName) {
 list<Entry> StructTable::get(string s) {
 	return struct_stack[s];
 }
+
+void StructTable::print(){
+	for(map<string,list<Entry>>::iterator it = struct_stack.begin(); it != struct_stack.end(); it++){
+		cout << "/////////////STRUCT/////////////" << endl;
+		cout << "Struct name: " << it->first << endl;
+		for (auto& field : it->second){
+			cout << "name: " << field.name << endl;
+			cout << "type: " << field.type << endl;
+			cout << "offset: " << field.offset << endl;
+			cout << "struct_type: " << field.struct_type << endl;
+		}
+		cout << "/////////////STRUCT/////////////" << endl;
+	}
+}

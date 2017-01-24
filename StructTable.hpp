@@ -6,6 +6,7 @@
 #include <map>
 #include <iostream>
 #include <ostream>
+#include <iterator>
 #include <stdbool.h>
 #include "attributes.hpp"
 
@@ -66,6 +67,8 @@ public:
 	* @returns a list of fields of the struct
 	*/
 	list<Entry> get(string s);
+	
+	void print();
 };
 
 

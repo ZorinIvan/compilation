@@ -41,6 +41,14 @@ public:
 		this->size = size;
 		this->struct_type = struct_type;
 	}
+	
+	void print(){
+		
+		cout << "type: " << type;
+		cout << " offset: " << offset;
+		cout << " size: " << size;
+		cout << " struct_type: " << struct_type << endl;
+	}
 
 };
 
@@ -114,6 +122,8 @@ public:
 	*
 	*/
 	void insertStruct(string name, string struct_type, int offset);
+	
+	void print();
 };
 
 

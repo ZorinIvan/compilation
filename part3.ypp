@@ -1,0 +1,701 @@
+%{
+  #include <stdio.h>
+  #include <iostream>
+  #include <sstream>
+  #include <fstream>
+	#include "Register.hpp"
+  #include "buffer.hpp"
+	#include "SymbolTable.hpp"
+	#include "StructTable.hpp"
+  #include "attributes.hpp"
+
+  
+  extern char* yytext;
+  extern int yylineno;
+
+  extern 	FILE *yyin;
+extern 	int yylex();
+extern void yylex_destroy();
+extern int yyparse (void);
+  //void yylex_destroy();
+  //int yylex (void);
+  void yyerror (const char*);
+  void semanticError(string s);
+  
+  SymbolTable symbol_table;
+  StructTable struct_table;
+  int gEntryOffset;
+  Buffer g_buff;
+%}
+/******************* rules *************************/
+
+
+
+
+%token NUM ID  STRING
+%token REAL_TOK INT_TOK WRITE_TOK READ_TOK WHILE_TOK DO_TOK IF_TOK
+%token THEN_TOK ELSE_TOK MAIN_TOK VAR_TOK CALL_TOK RETURN_TOK DEFSTRUCT_TOK EXTERN_TOK
+%token COM SC COL
+
+
+
+%right ASSIGN_OP
+%left OR_OP
+%left AND_OP
+%left REL_OP
+%left ADD_OP
+%left MUL_OP
+%right NOT_OP
+  
+%right LP
+%left RP
+%right LC
+%left RC
+%right LS
+%left RS
+
+  
+%%
+/************************ C user routines **************************/
+PROGRAM: TDEFS FDEFS MAIN_FUNCTION {//TODO
+
+                                   }
+;
+//                            1     2            3    4        5  6  7
+TDEFS: {symbol_table.push();} TDEFS DEFSTRUCT_TOK LC DECLARLIST RC ID SC {//TODO
+	// All fields of the struct are in the top of symbol table
+	// Define a new struct type
+	
+	if(struct_table.getOffset($6.content) > 0){
+		symbol_table.pop();
+		semanticError("struct with such name already exists");
+	}
+	
+	struct_table.push($6.content); //insert a new struct type
+	map<string, SymbolEntry>  table = symbol_table.pop(); //pops all fields of the struct that were declared before
+	
+	for(map<string, SymbolEntry>::iterator it = table.begin(); it != table.end(); it++){
+		string name = it->first;
+		SymbolEntry entry = it->second;
+		if(entry.type == STRUCT){
+			struct_table.insert($6.content, name, entry.size, entry.struct_type);
+		}
+		else{
+			struct_table.insert($6.content, entry.type, name, entry.size);
+		}
+		
+	}
+
+ }		
+ | /*epsilon*/
+             
+;	
+
+FDEFS: FDEFS TYPE ID LP FUNC_ARGLIST_FULL RP BLK {//TODO
+  
+                                  }
+                                |
+                                  FDEFS EXTERN_TOK TYPE ID LP FUNC_ARGLIST_FULL RP SC {//TODO
+
+                                  }		
+                                |
+                                  /*epsilon*/
+               
+;
+
+FUNC_ARGLIST_FULL: FUNC_ARGLIST {//TODO
+                            
+                                  }
+                                |
+                                  /*epsilon*/
+                      
+
+;		
+
+FUNC_ARGLIST:	FUNC_ARGLIST COM DCL {//TODO
+             
+                                  }
+                                |
+                                  DCL {//TODO
+                    
+                                  }
+;
+
+MAIN_FUNCTION: MAIN_TOK BLK {//TODO
+    
+                                  } 
+                                |
+                                  /*epsilon*/ 
+  ;		
+
+BLK: DECLARATIONS LC LIST RC {//TODO
+     // end of scope
+	 symbol_table.pop();
+                              }
+;	
+
+DECLARATIONS: VAR_TOK {symbol_table.push();} DECLARLIST  
+{ 
+	/**
+	* 	All variables of the current scope are in the symbol table.
+	*	I1 must point to the stack frame and I2 will point to the top
+	*	of the stack. 
+	*/
+	
+	ostringstream os;
+	os << "ADD2I I2 I1 " << symbol_table.top().size();
+	g_buff.emit(os.str());		
+	
+}
+                              |
+                                /*epsilon*/
+                           
+;		
+
+DECLARLIST: DECLARLIST DCL SC 
+{
+}
+| DCL SC
+{
+}
+;		
+
+DCL: ID COL TYPE 
+{
+	$$.content = $1.content;
+	$$.type = $3.type;
+	$$.offset = 1;
+	symbol_table.insert($1.content, $3.type, 1);
+} 
+    |
+ID COL ID {
+	int offset = struct_table.getOffset($3.content); //check if struct $3 exists
+	if (offset == -1){
+		semanticError("undefined struct");
+	}
+	$$.content = $1.content; //the name of a new var
+	$$.type = STRUCT;
+	$$.offset = offset;
+	symbol_table.insertStruct($1.content, $3.content, offset);
+	
+} 
+    |
+	
+ID COM DCL {
+	$$.content = $1.content;
+	$$.type = $3.type;
+	$$.offset = $3.offset;
+	symbol_table.insert($1.content, $3.type, 1);
+}
+;	
+
+ TYPE: INT_TOK {
+                 $$.type = INT;
+               }
+
+    | REAL_TOK {
+				 $$.type = REAL;
+				}
+;	
+
+LIST: LIST M STMT {
+           $$.next_list = $3.next_list;
+		   g_buff.backpatch($2.next_list, $2.address);
+}
+     |
+      /*epsilon*/
+                               
+;	
+
+STMT: 
+                                ASSN { }
+                              |
+                                CNTRL {
+                              $$.next_list = $1.next_list;
+                                }
+                              |
+                                READ {}
+                              |
+                                WRITE {}
+                              |
+                                STMT_RETURN {}
+                              |
+                                BLK {}
+;	
+
+STMT_RETURN:	RETURN_TOK LP EXP RP SC {//TODO
+    
+}
+;	
+
+WRITE: WRITE_TOK LP EXP RP SC {
+	if ($3.type == INT) {
+		g_buff.emit("PRNTI " + $3.place);
+	}
+	else {
+		g_buff.emit("PRNTR " + $3.place);
+	}		
+   }
+  |
+    WRITE_TOK LP STRING RP SC {
+		for(int i = 0; i < $3.content.length(); i++){
+			char currSymbol = $3.content[i];
+			if(currSymbol == '\\' && $3.content[i+1] == 'n'){ //new line
+				currSymbol = '\n'; 
+				i++;
+			}
+			if(currSymbol == '\\' && $3.content[i+1] == 't') {//tab
+				currSymbol = '\t'; 
+				i++;
+			}
+			g_buff.emit("PRNTC " + to_string((int)currSymbol));
+		}
+    }
+;	
+
+READ: READ_TOK LP LVAL RP SC {
+
+		string emittedRead = ($3.type == INT)?"READI ":"READR ";
+		string emittedStore = ($3.type == INT)?"STORI ":"STORR ";
+		
+		// allocate a temporary register and assign to it user input:
+		string tempRegister = Register::getNewReg($3.type);
+		g_buff.emit(emittedRead + tempRegister);
+		
+		// store the temporary register to memory:
+		g_buff.emit(emittedStore + tempRegister + " " + $3.place + " 0");     
+	}
+;	
+
+ASSN: LVAL ASSIGN_OP EXP SC {
+	Type lValType = $1.type, rValType = $3.type;
+	ostringstream os;
+	if(lValType == INT){
+		os << "STORI ";
+	}
+	else {
+		os << "STORR ";
+	}
+	
+	if (lValType != rValType) {
+		// casting is needed, allocate a temporary register and set it to the casted value:
+		ostringstream os1;
+		string tmpReg =  Register::getNewReg(lValType);
+		
+		if (lValType == INT) { //cast to int
+			os1 << "CRTOI ";
+		}
+		else { //cast to real
+			os1 << "CITOR ";
+		}
+		
+		os << tmpReg << " " << $1.place << " 0";
+		os1 << tmpReg << $3.place;
+		
+		g_buff.emit(os1.str());
+		g_buff.emit(os.str());
+	}
+	
+	else{
+		//assign the temporary register to the memory
+		os << $3.place << " " << $1.place << " 0";
+		g_buff.emit(os.str());
+	}
+}
+
+;
+
+LVAL: ID {
+	SymbolEntry sEntry = symbol_table.get($1.content);
+	 //check that a variable is declared
+	if(sEntry.offset < 0){
+		semanticError("A variable is not declared");
+	}
+	
+		
+		$$.type = sEntry.type;
+		$$.offset = sEntry.offset;
+		$$.place = Register::getNewReg($$.type);	
+		
+		ostringstream os;
+		os << "ADD2I " << $$.place << " I1 " << $$.offset;
+		g_buff.emit(os.str());
+}
+  |
+    STREF {//TODO
+            $$ = $1;                 
+     }
+;
+//       1     2     3      4   5    6      7 8  9
+CNTRL: IF_TOK BEXP THEN_TOK M STMT ELSE_TOK N M STMT {
+	g_buff.backpatch($2.true_list, $4.address);
+	g_buff.backpatch($2.false_list, $8.address);
+	$$.next_list = merge(merge($5.next_list, $9.next_list), $7.next_list);
+}
+      | IF_TOK BEXP THEN_TOK M STMT {
+			g_buff.backpatch($2.true_list, $4.address);
+			$$.next_list = merge($2.false_list, $5.next_list);
+}
+//           1    2   3    4    5   6
+      | WHILE_TOK M BEXP DO_TOK M STMT {
+			g_buff.backpatch($3.true_list,$5.address);
+			g_buff.backpatch($6.next_list,$2.address);
+			$$.next_list = $3.false_list;
+			g_buff.emit("UJUMP " + to_string($2.address));
+}
+;	
+
+BEXP: BEXP OR_OP M BEXP {
+	g_buff.backpatch($1.false_list, $3.address);
+	$$.false_list = $4.false_list;
+	$$.true_list = merge($1.true_list, $4.true_list);
+  }
+	| BEXP AND_OP M BEXP {
+		g_buff.backpatch($1.true_list, $3.address);
+		$$.false_list = merge($1.false_list, $4.false_list);
+		$$.true_list = $4.true_list;
+}
+
+    | NOT_OP BEXP {
+		$$.true_list = $2.false_list;
+		$$.false_list = $2.true_list;
+}
+    | EXP REL_OP EXP {
+		
+		if($1.type != $3.type) {
+			semanticError("different types in REL_OP");
+		}
+		else if($1.type == REAL || $1.type == INT){
+			ostringstream compare, branch;
+			if($2.content == "=="){
+				compare << "SEQU";
+				branch << "BREQZ";
+			}
+			if($2.content == "<>"){
+				compare << "SNEQ";
+				branch << "BREQZ";				
+			}
+			if($2.content == "<"){
+				compare << "SLET";
+				branch << "BREQZ";				
+			}
+			if($2.content == "<="){
+				compare << "SGRT";
+				branch << "BNEQZ";				
+			}
+			if($2.content == ">"){
+				compare << "SGRT";
+				branch << "BREQZ";				
+			}
+			if($2.content == ">="){
+				compare << "SLET";
+				branch << "BNEQZ";				
+			}
+			if($1.type == REAL){
+				compare << "R ";
+			}
+			else{
+				compare << "I ";
+			}
+			
+			compare << Register::getNewReg(INT) <<  " " << $1.place << $2.place;
+			branch << Register::getNewReg(INT) << " ";
+			
+			g_buff.emit(compare.str());
+			$$.false_list = makelist(g_buff.nextQuad());
+			g_buff.emit(branch.str());
+			$$.true_list = makelist(g_buff.nextQuad());
+			g_buff.emit("UJUMP ");
+			
+			
+		}
+		else {
+			semanticError("unknown types in REL_OP");
+		}
+}
+    | LP BEXP RP {
+		$$.true_list = $2.true_list;
+		$$.false_list = $2.false_list;	
+}
+;	
+
+EXP: EXP ADD_OP EXP 
+	{		
+		if(($1.type != $3.type) || $1.type == STRUCT || $3.type == STRUCT ){
+			semanticError("type missmatch within add operation");
+		}
+		else{
+			$$.type = $1.type;
+			string T = ($$.type == INT)?"I":"R";
+			$$.place = Register::getNewReg($$.type);
+	
+	
+			if ($2.content == "+") {
+				g_buff.emit("ADD2" + T + " " + $$.place + " " + $1.place + " " + $2.place);
+			} 
+			else { // "-"
+				g_buff.emit("SUBT" + T + " " + $$.place + " " + $1.place + " " + $2.place);
+			
+			}	
+		}
+								
+    }
+   
+   | EXP MUL_OP EXP 
+	 {
+		if(($1.type != $3.type) || $1.type == STRUCT || $3.type == STRUCT){
+			semanticError("type missmatch within mult operation");
+		}
+		else{
+			$$.type = $1.type;
+			string T = ($$.type == INT)?"I":"R";
+			$$.place = Register::getNewReg($$.type);
+	
+	
+			if ($2.content == "*") {
+				g_buff.emit("MULT" + T + " " + $$.place + " " + $1.place + " " + $2.place);
+			} 
+			else { // "/"
+				g_buff.emit("DIVD" + T + " " + $$.place + " " + $1.place + " " + $2.place);
+			
+			}	
+		}
+			
+   }
+
+   | LP EXP RP
+    {
+		$$ = $2;
+    }
+
+   | LP TYPE RP EXP 
+	{
+			$$.type = $2.type;
+			$$.place = Register::getNewReg($$.type);
+			
+			if($2.type == INT){
+				g_buff.emit("CRTOI " + $$.place + $4.place);
+			}
+			
+			else{//REAL
+				g_buff.emit("CRTOR " + $$.place + $4.place);
+			}
+		
+    }
+   
+   |
+     ID {
+		 
+		 SymbolEntry sEntry = symbol_table.get($1.content);
+		 //check that a variable is declared
+		if(sEntry.offset < 0){
+			semanticError("A variable is not declared");
+		}
+		
+		
+		$$.type = sEntry.type;
+		$$.offset = sEntry.offset;
+		$$.place = Register::getNewReg($$.type);
+		
+		ostringstream os;
+		if($$.type == INT){
+			os << "LOADI ";
+		}
+		else{
+			os << "LOADR ";
+		}
+		
+		os << $$.place << " I1 " << $$.offset;
+		g_buff.emit(os.str());		
+		
+        }
+
+   |
+     STREF {
+		 /* 
+		  * $1 is a field in the struct.
+		  * If $1 is field in the struct:
+		  *	$1.content: the name if the field
+		  *	$1.offset:  the offset from the start of the STRUCT!
+		  * $1.type: INT or REAL or STRUCT
+		  * $1 is not in the Symbol table (in symbol table we save only a declaration of 
+		  * 									the variable of the struct type)
+		  */
+		  
+          if($1.type != STRUCT){
+			SymbolEntry sEntry = symbol_table.get($1.struct_type);
+			int offset = sEntry.offset + $1.offset; //TODO: check 	
+			$$.type = $1.type;
+			$$.offset = offset;
+			$$.place = Register::getNewReg($$.type);
+			
+			ostringstream os;
+			if($$.type == INT){
+				os << "LOADI ";
+			}
+			else{
+				os << "LOADR ";
+			}
+			
+			os << $$.place << " I1 " << $$.offset;
+			g_buff.emit(os.str());					
+		  }   
+		  else{ //TODO: check
+			  $$ = $1;
+		  }
+ }
+   |
+     NUM {
+			$$.type = $1.type;
+			$$.place = Register::getNewReg($$.type);
+			if ($$.type == REAL) {
+				g_buff.emit("COPYR " + $$.place + " " + $1.content);
+			}
+			else {
+				g_buff.emit("COPYI " + $$.place + " " + $1.content);
+			}
+         }
+   |
+     CALL {
+                $$.type = $1.type;
+				$$.place = $1.place;
+			}
+;	
+
+STREF: ID LS ID RS {
+		SymbolEntry sEntry = symbol_table.get($1.content); //get a variable from the symbol table
+		 //check that a variable is declared
+		if(sEntry.offset < 0){
+			semanticError("A variable is not declared");
+		}
+		gEntryOffset = sEntry.offset;
+		if(sEntry.type != STRUCT){ //check if the variable is a struct
+			semanticError("A variable is not a struct type");
+		}
+		
+		//the variable is a struct. Get all fields that are defined for this struct 
+		list<Entry> fields = struct_table.get(sEntry.struct_type); 
+		bool found = false;
+		for (auto& field : fields){ //find a field with the name $3
+			if(field.name == $3.content){
+				found = true;
+				$$.content = field.name;
+				$$.type = field.type;
+				$$.struct_type = field.struct_type;
+				$$.offset = field.offset;//offset of the field from the start of struct
+			}
+		}
+		if(found == false){
+			semanticError("a field is undefined in struct");
+		}
+		
+		
+
+}
+ | STREF LS ID RS {
+	if($1.type != STRUCT){
+		semanticError("not a struct");
+	}
+	
+	//SymbolEntry sEntry = symbol_table.get($1.content); //get a variable from the symbol table
+	list<Entry> fields = struct_table.get($1.struct_type);
+	
+	//the variable is a struct. Get all fields that are defined for this struct 
+	//list<Entry> fields = struct_table.get(sEntry.struct_type); 
+	bool found = false;
+	for (auto& scope : fields){ //find a field with the name $3
+		if(scope.name == $3.content){
+			found = true;
+			$$.content = scope.name;
+			$$.type = scope.type;
+			$$.offset = scope.offset;
+			$$.struct_type = scope.struct_type;
+		}
+	}
+	if(found == false){
+		semanticError("a field is undefined in struct");
+	}		
+	
+}
+;	
+
+CALL: CALL_TOK ID LP CALL_ARGS_FULL RP {//TODO
+
+                          }
+;	
+
+CALL_ARGS_FULL: CALL_ARGS {//TODO
+                            
+                          }
+                        |
+                          /*epsilon*/
+         ;	
+
+CALL_ARGS:  EXP {//TODO
+             
+               }
+    |
+     CALL_ARGS COM EXP {//TODO
+
+                        }
+;
+
+/**************** Markers *****************/
+M: {
+	$$.address = g_buff.nextQuad();
+}
+
+N: {
+	$$.next_list = makelist(g_buff.nextQuad());
+	g_buff.emit("UJUMP ");
+}
+	
+%%
+  
+
+void semanticError(string s) {
+  printf("Semantic error: '%s' in line number %d\n", s.c_str(), yylineno);
+  exit(3);
+}
+
+void yyerror (const char* str){
+   printf("Syntax error: '%s' in line number %d\n", yytext, yylineno);
+   exit(2);
+}
+
+int main(int argc, char* argv[]) {
+	string inputFile = argv[1];
+	size_t lastindex;
+	
+	if (argc != 2) {
+		cerr << "Operational error: invalid number of arguments" << endl;
+		exit(1);
+	}
+
+	try {
+		lastindex = inputFile.find_last_of(".");
+		if (inputFile.substr(lastindex) != ".cmm") {
+			throw std::invalid_argument("");
+		}
+	}
+	catch (exception& e){
+		cerr << "Operational error: invalid file type. expecting '.cmm' extension" << endl;
+		exit(1);
+	}
+
+	string outFile = inputFile.substr(0, lastindex) + ".rsk";
+	std::ofstream out(outFile);
+	std::streambuf *coutBuffer = std::cout.rdbuf(); //save old buffer
+	std::cout.rdbuf(out.rdbuf()); //redirect std::cout to outFile
+
+	yyin = fopen(argv[1], "r");
+
+	yyparse();
+	g_buff.print();
+
+	cout.rdbuf(coutBuffer); //reset to standard output again
+	fclose(yyin);
+
+	yylex_destroy();
+	return 0;
+}

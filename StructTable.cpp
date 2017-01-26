@@ -36,6 +36,8 @@ list<Entry> StructTable::get(string s) {
 }
 
 void StructTable::print(){
+	cout << "********STRUCT TABLE***********" << endl;
+	cout << endl;
 	for(map<string,list<Entry>>::iterator it = struct_stack.begin(); it != struct_stack.end(); it++){
 		cout << "/////////////STRUCT/////////////" << endl;
 		cout << "Struct name: " << it->first << endl;
@@ -45,6 +47,7 @@ void StructTable::print(){
 			cout << "offset: " << field.offset << endl;
 			cout << "struct_type: " << field.struct_type << endl;
 		}
-		cout << "/////////////STRUCT/////////////" << endl;
 	}
+	cout << "**************************"<<endl;
+	cout<<endl;
 }

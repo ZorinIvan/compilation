@@ -17,9 +17,9 @@ string Register::getNewReg(Type type) {
 	if (type == INT) {
 		int regNum = intRegCnt;
 		intRegCnt++;
-		return("I" + to_string(intRegCnt));
+		return("I" + to_string(regNum));
 	}
 	int regNum = realRegCnt;
 	realRegCnt++;
-	return("R" + to_string(intRegCnt));
+	return("R" + to_string(regNum));
 }

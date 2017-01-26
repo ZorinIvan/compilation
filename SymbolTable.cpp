@@ -56,14 +56,22 @@ void SymbolTable::insertStruct(string name, string struct_type, int offset) {
 }
 
 void SymbolTable::print(){
+	cout << "********SymbolTable***********" << endl;
+	cout << endl;
 	for (auto& field : symbol_stack){
 		cout<<"////START SCOPE////"<< endl;
 		for(map<string, SymbolEntry >::iterator it = field.begin(); it != field.end(); it++){
 			cout<<endl;
-			cout<<"/////SYMBOL/////"<<endl;
+			//cout<<"/////SYMBOL/////"<<endl;
 			cout<<"var name: "<<it->first<<endl;
 			it->second.print();
 		}
 		cout<<"////END SCOPE////"<< endl;
 	}
+	cout << "**************************"<<endl;
+	cout<<endl;
+}
+
+int SymbolTable::currentOffset(){
+	return offset_stack.front();
 }

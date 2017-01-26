@@ -43,7 +43,7 @@ public:
 	void insert(string structName, Type type, string name, int offset);
 	
 	/**
-	* Inserts a new regular field to the struct
+	* Inserts a new struct field to the struct
 	*/
 	void insert(string structName, string name, int offset, string struct_type);
 	

@@ -14,7 +14,7 @@ void Buffer::emit(const string code) {
 
 
 int Buffer::nextQuad() {
-	return bufferList.size();
+	return bufferList.size() ;
 }
 
 

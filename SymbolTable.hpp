@@ -15,7 +15,7 @@ using namespace std;
 class SymbolEntry {
 public:
 	Type type;
-	int offset;
+	int offset; //offset from the start of the struct
 	bool isTop;
 	int size;
 	string struct_type;
@@ -124,6 +124,7 @@ public:
 	void insertStruct(string name, string struct_type, int offset);
 	
 	void print();
+	int currentOffset();
 };
 
 

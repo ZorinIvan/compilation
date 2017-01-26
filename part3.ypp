@@ -1,5 +1,6 @@
 %{
   #include <stdio.h>
+  #include <stdlib.h>
   #include <iostream>
   #include <sstream>
   #include <fstream>
@@ -14,18 +15,18 @@
   extern int yylineno;
 
   extern 	FILE *yyin;
-extern 	int yylex();
-extern void yylex_destroy();
-extern int yyparse (void);
+  extern 	int yylex();
+  extern void yylex_destroy();
+  extern int yyparse (void);
   //void yylex_destroy();
   //int yylex (void);
   void yyerror (const char*);
   void semanticError(string s);
   void Debug(string s);
+  void assignStructs(int leftOffset, const list<Entry>& leftStruct , int rightOffset);
   
   SymbolTable symbol_table;
   StructTable struct_table;
-  int gEntryOffset;
   Buffer g_buff;
 %}
 /******************* rules *************************/
@@ -58,13 +59,15 @@ extern int yyparse (void);
   
 %%
 /************************ C user routines **************************/
-PROGRAM: TDEFS FDEFS MAIN_FUNCTION {//TODO
+PROGRAM: TDEFS N FDEFS M MAIN_FUNCTION {//TODO
       //Debug
   Debug("PROGRAM: TDEFS FDEFS MAIN_FUNCTION" );
-                                   }
+  
+  
+}
 ;
 //      1     2            3    4        5  6  7    8
-TDEFS: M1 TDEFS DEFSTRUCT_TOK LC DECLARLIST RC ID SC {//TODO
+TDEFS: TDEFS M1 DEFSTRUCT_TOK LC DECLARLIST RC ID SC {
 	// All fields of the struct are in the top of symbol table
 	// Define a new struct type
 	
@@ -136,9 +139,10 @@ MAIN_FUNCTION: MAIN_TOK BLK {//TODO
                                   /*epsilon*/ 
   ;		
 
-BLK: DECLARATIONS LC LIST RC {//TODO
+BLK: DECLARATIONS LC LIST M RC {//TODO
      // end of scope
    Debug("BLK: DECLARATIONS LC LIST RC" );
+   g_buff.backpatch($3.next_list , $4.address);
 	 symbol_table.pop();
                               }
 ;	
@@ -154,7 +158,7 @@ DECLARATIONS: VAR_TOK M1 DECLARLIST
   Debug("DECLARATIONS: VAR_TOK M1 DECLARLIST ");
 	
 	ostringstream os;
-	os << "ADD2I I2 I1 " << symbol_table.top().size();
+	os << "ADD2I I2 I1 " << symbol_table.currentOffset();
 	g_buff.emit(os.str());		
 	
 }
@@ -180,10 +184,10 @@ DCL: ID COL TYPE
 	$$.offset = 1;
 	symbol_table.insert($1.content, $3.type, 1);
         //Debug
-      ostringstream os1;
-      os1 << $$.content << " " << $$.type;
+      //ostringstream os1;
+     // os1 << $$.content << " " << $$.type;
       Debug("DCL: ID COL TYPE ");
-      Debug(os1.str());
+     // Debug(os1.str());
   
 } 
     |
@@ -197,22 +201,27 @@ ID COL ID {
 	$$.content = $1.content; //the name of a new var
 	$$.type = STRUCT;
 	$$.offset = offset;
+  $$.struct_type = $3.content;
 	symbol_table.insertStruct($1.content, $3.content, offset);
 	
 } 
     |
 	
 ID COM DCL {
-
+    
 	$$.content = $1.content;
 	$$.type = $3.type;
 	$$.offset = $3.offset;
-	symbol_table.insert($1.content, $3.type, 1);
+  $$.struct_type = $3.struct_type;
+  if($$.type != STRUCT)
+	  symbol_table.insert($1.content, $3.type, 1);
+  else
+    symbol_table.insertStruct($1.content, $$.struct_type, $$.offset);
   //Debug
-  ostringstream os1;
-  os1 << $$.content << " " << $$.type;
+  //ostringstream os1;
+ // os1 << $$.content << " " << $$.type;
   Debug("ID COM DCL ");
-  Debug(os1.str());
+ // Debug(os1.str());
 }
 ;	
 
@@ -230,7 +239,7 @@ ID COM DCL {
 LIST: LIST M STMT {
    Debug("LIST: LIST M STMT ");
            $$.next_list = $3.next_list;
-		   g_buff.backpatch($2.next_list, $2.address);
+		   g_buff.backpatch($1.next_list, $2.address);
 }
      |
       /*epsilon*/
@@ -262,7 +271,10 @@ STMT_RETURN:	RETURN_TOK LP EXP RP SC {//TODO
 ;	
 
 WRITE: WRITE_TOK LP EXP RP SC {
-  Debug("WRITE: WRITE_TOK LP EXP RP SC ");
+    Debug("WRITE: WRITE_TOK LP EXP RP SC ");
+   if($3.type != INT && $3.type != REAL) {
+      semanticError("unknown type for WRITE");
+   }
 	if ($3.type == INT) {
 		g_buff.emit("PRNTI " + $3.place);
 	}
@@ -310,39 +322,49 @@ READ: READ_TOK LP LVAL RP SC {
 
 ASSN: LVAL ASSIGN_OP EXP SC {
  Debug(" ASSN: LVAL ASSIGN_OP EXP SC ");
-	Type lValType = $1.type, rValType = $3.type;
-	ostringstream os;
-	if(lValType == INT){
-		os << "STORI ";
-	}
-	else {
-		os << "STORR ";
-	}
-	
-	if (lValType != rValType) {
-		// casting is needed, allocate a temporary register and set it to the casted value:
-		ostringstream os1;
-		string tmpReg =  Register::getNewReg(lValType);
-		
-		if (lValType == INT) { //cast to int
-			os1 << "CRTOI ";
-		}
-		else { //cast to real
-			os1 << "CITOR ";
-		}
-		
-		os << tmpReg << " " << $1.place << " 0";
-		os1 << tmpReg << $3.place;
-		
-		g_buff.emit(os1.str());
-		g_buff.emit(os.str());
-	}
-	
-	else{
-		//assign the temporary register to the memory
-		os << $3.place << " " << $1.place << " 0";
-		g_buff.emit(os.str());
-	}
+  struct_table.print();//debug
+  symbol_table.print(); //debug
+  
+  /**
+  * If LVAL is a name of variable OR a struct field then:
+  * $1.place: the adress in the stack for the value of the var
+  * $1.offset: offset from I1
+  * $1.struct_type: struct type in which $1 is a field
+  *
+  * If LVAL is a struct we need to assign all its fields
+  *
+  *
+  */
+  
+  if($1.type != $3.type){
+    semanticError("Different types while assigning");
+  }
+  
+  if($1.type == REAL || $1.type == INT){
+    
+      ostringstream os;
+      if($1.type == INT){
+        os << "STORI ";
+      }
+      else {
+        os << "STORR ";
+      }
+    
+     os << $3.place << " " << $1.place << " 0";
+		 g_buff.emit(os.str()); 
+ 
+  }
+  
+  else{ //Assigning struct TODO:
+     if($1.struct_type != $3.struct_type){
+        semanticError("Different struct types while assigning");
+     }
+    SymbolEntry lEntry = symbol_table.get($1.content);
+    SymbolEntry rEntry = symbol_table.get($3.content);
+    assignStructs(lEntry.offset, struct_table.get(lEntry.struct_type), rEntry.offset);
+  }
+  
+  
 }
 
 ;
@@ -355,29 +377,54 @@ LVAL: ID {
 		semanticError("A variable is not declared");
 	}
 	
-		
+		$$.content = $1.content;
 		$$.type = sEntry.type;
 		$$.offset = sEntry.offset;
-		$$.place = Register::getNewReg($$.type);	
+		$$.place = Register::getNewReg(INT);	
+    $$.struct_type = sEntry.struct_type;
 		
 		ostringstream os;
-		os << "ADD2I " << $$.place << " I1 " << $$.offset;
+		os << "ADD2I " << $$.place << " I1 " << $$.offset; //save the adress in the stack
 		g_buff.emit(os.str());
 }
   |
-    STREF {//TODO
+    STREF {
        Debug("STREF ");
-            $$ = $1;                 
+      //In STREF we will allocate an address that saves its place in the stack
+      if($1.type == STRUCT){
+            $$ = $1;
+      }
+      
+      else{
+        $$.type = $1.type;
+        $$.offset = $1.offset;
+        $$.content = $1.content;
+        $$.struct_type = $1.struct_type;
+        $$.place = Register::getNewReg(INT);
+        ostringstream os;
+        os << "ADD2I " << $$.place << " I1 " << $$.offset; //save the adress in the stack
+        g_buff.emit(os.str());
+          
+      }
      }
 ;
-//       1     2     3      4   5    6      7 8  9
-CNTRL: IF_TOK BEXP THEN_TOK M STMT ELSE_TOK N M STMT {
+//       1     2     3      4   5     6       7 8  9
+CNTRL: IF_TOK BEXP THEN_TOK M STMT  ELSE_TOK  N M STMT {
    Debug("CNTRL: IF_TOK BEXP THEN_TOK M STMT ELSE_TOK N M STMT ");
 	g_buff.backpatch($2.true_list, $4.address);
 	g_buff.backpatch($2.false_list, $8.address);
-	$$.next_list = merge(merge($5.next_list, $9.next_list), $7.next_list);
+  list<int> tmp;
+	tmp = merge($5.next_list, $7.next_list);
+  	$$.next_list = merge(tmp, $9.next_list);
+  
+	for (auto& field : $$.next_list) { //find a field with the name $3
+    cout<<  "fggggggggggggggggggggggggggggggggggggggggggggggggggggggggg"<< endl;
+    cout << field <<  endl;
+  }
+			
+ // $$.next_list = merge($5.next_list, $9.next_list);
 }
-      | IF_TOK BEXP THEN_TOK M STMT {
+      | IF_TOK BEXP THEN_TOK M STMT N {
          Debug("IF_TOK BEXP THEN_TOK M STMT ");
 			g_buff.backpatch($2.true_list, $4.address);
 			$$.next_list = merge($2.false_list, $5.next_list);
@@ -427,27 +474,27 @@ BEXP: BEXP OR_OP M BEXP {
 			ostringstream compare, branch;
 			if($2.content == "=="){
 				compare << "SEQU";
-				branch << "BREQZ";
+				branch << "BREQZ ";
 			}
 			if($2.content == "<>"){
 				compare << "SNEQ";
-				branch << "BREQZ";				
+				branch << "BREQZ ";				
 			}
 			if($2.content == "<"){
 				compare << "SLET";
-				branch << "BREQZ";				
+				branch << "BREQZ ";				
 			}
 			if($2.content == "<="){
 				compare << "SGRT";
-				branch << "BNEQZ";				
+				branch << "BNEQZ ";				
 			}
 			if($2.content == ">"){
 				compare << "SGRT";
-				branch << "BREQZ";				
+				branch << "BREQZ ";				
 			}
 			if($2.content == ">="){
 				compare << "SLET";
-				branch << "BNEQZ";				
+				branch << "BNEQZ ";				
 			}
 			if($1.type == REAL){
 				compare << "R ";
@@ -545,8 +592,7 @@ EXP: EXP ADD_OP EXP
 		
     }
    
-   |
-     ID {
+   | ID {
        Debug("ID  ");
 		 
 		 SymbolEntry sEntry = symbol_table.get($1.content);
@@ -559,40 +605,40 @@ EXP: EXP ADD_OP EXP
 		$$.type = sEntry.type;
 		$$.offset = sEntry.offset;
 		$$.place = Register::getNewReg($$.type);
-		
+		$$.struct_type = sEntry.struct_type;
+       
 		ostringstream os;
 		if($$.type == INT){
 			os << "LOADI ";
+      os << $$.place << " I1 " << $$.offset;
+		  g_buff.emit(os.str());	
 		}
-		else{
+		else if ($$.type == REAL){
 			os << "LOADR ";
+      os << $$.place << " I1 " << $$.offset;
+	  	g_buff.emit(os.str());	
 		}
 		
-		os << $$.place << " I1 " << $$.offset;
-		g_buff.emit(os.str());		
+	
 		
-        }
+    }
 
    |
-     STREF {
+     STREF {//TODO bug
          Debug("STREF  ");
 		 /* 
 		  * $1 is a field in the struct.
 		  * If $1 is field in the struct:
-		  *	$1.content: the name if the field
-		  *	$1.offset:  the offset from the start of the STRUCT!
+		  *	$1.content: the name of the field
+		  *	$1.offset:  the offset from I1!
 		  * $1.type: INT or REAL or STRUCT
 		  * $1 is not in the Symbol table (in symbol table we save only a declaration of 
 		  * 									the variable of the struct type)
 		  */
 		  
-          if($1.type != STRUCT){
-			SymbolEntry sEntry = symbol_table.get($1.struct_type);
-			int offset = sEntry.offset + $1.offset; //TODO: check 	
-			$$.type = $1.type;
-			$$.offset = offset;
+      if($1.type != STRUCT){
+			$$ = $1;
 			$$.place = Register::getNewReg($$.type);
-			
 			ostringstream os;
 			if($$.type == INT){
 				os << "LOADI ";
@@ -604,7 +650,7 @@ EXP: EXP ADD_OP EXP
 			os << $$.place << " I1 " << $$.offset;
 			g_buff.emit(os.str());					
 		  }   
-		  else{ //TODO: check
+		  else{ 
 			  $$ = $1;
 		  }
  }
@@ -622,8 +668,8 @@ EXP: EXP ADD_OP EXP
          }
    |
      CALL {
-        Debug("CALL  ");
-                $$.type = $1.type;
+        Debug("CALL ");
+        $$.type = $1.type;
 				$$.place = $1.place;
 			}
 ;	
@@ -635,7 +681,6 @@ STREF: ID LS ID RS {
 		if(sEntry.offset < 0){
 			semanticError("A variable is not declared");
 		}
-		gEntryOffset = sEntry.offset;
 		if(sEntry.type != STRUCT){ //check if the variable is a struct
 			semanticError("A variable is not a struct type");
 		}
@@ -643,13 +688,29 @@ STREF: ID LS ID RS {
 		//the variable is a struct. Get all fields that are defined for this struct 
 		list<Entry> fields = struct_table.get(sEntry.struct_type); 
 		bool found = false;
+  cout << $1.content << " " << $3.content << endl;
+  symbol_table.print();
 		for (auto& field : fields){ //find a field with the name $3
+      cout << field.name << " " << $3.content << endl;
 			if(field.name == $3.content){
 				found = true;
 				$$.content = field.name;
 				$$.type = field.type;
 				$$.struct_type = field.struct_type;
-				$$.offset = field.offset;//offset of the field from the start of struct
+				$$.offset = sEntry.offset + field.offset;//offset of the field from I1
+       /* ostringstream os;
+        if($$.type == INT){
+          os << "LOADI ";
+          os << $$.place << " I1 " << $$.offset;
+          g_buff.emit(os.str());
+        }
+        else if($$.type == REAL){
+          os << "LOADR ";
+          os << $$.place << " I1 " << $$.offset;
+          g_buff.emit(os.str());
+        }*/
+
+         
 			}
 		}
 		if(found == false){
@@ -676,8 +737,19 @@ STREF: ID LS ID RS {
 			found = true;
 			$$.content = scope.name;
 			$$.type = scope.type;
-			$$.offset = scope.offset;
+			$$.offset = scope.offset + $1.offset;//offset of the field from I1
 			$$.struct_type = scope.struct_type;
+       /* ostringstream os;
+        if($$.type == INT){
+          os << "LOADI ";
+          os << $$.place << " I1 " << $$.offset;
+          g_buff.emit(os.str());
+        }
+        else if($$.type == REAL){
+          os << "LOADR ";
+          os << $$.place << " I1 " << $$.offset;
+          g_buff.emit(os.str());
+        }  */    
 		}
 	}
 	if(found == false){
@@ -718,6 +790,7 @@ Debug("M ");
 N: {
 Debug("N"); 
 	$$.next_list = makelist(g_buff.nextQuad());
+//$$.next_list = g_buff.nextQuad();
 	g_buff.emit("UJUMP ");
 }
 
@@ -727,9 +800,49 @@ Debug("M1 ");
 }
 	
 %%
+  
+void assignStructs(int leftOffset, const list<Entry>& leftStruct , int rightOffset){
+  
+  for (auto& field : leftStruct){
+    
+    switch(field.type){
+        
+      case INT:
+        {
+          ostringstream os, ol;
+          string reg = Register::getNewReg(INT);
+      
+          ol << "LOADI " << reg << " I1 " << rightOffset + field.offset;
+          os << "STORI " << reg << " I1 " << leftOffset + field.offset;
+
+          g_buff.emit(ol.str());
+          g_buff.emit(os.str());
+          break;
+    }
+      case REAL:
+        {
+          ostringstream os, ol;
+          string reg = Register::getNewReg(REAL);
+      
+          ol << "LOADR " << reg << " I1 " << rightOffset + field.offset;
+          os << "STORR " << reg << " I1 " << leftOffset + field.offset;
+
+          g_buff.emit(ol.str());
+          g_buff.emit(os.str());
+          break;     
+    }
+      default: //Struct
+        {
+      assignStructs(leftOffset + field.offset, struct_table.get(field.struct_type), rightOffset + field.offset);
+    }
+    }
+    
+  }
+}
  
 void Debug(string s){
-  cout << s << endl;
+ // cout << s << endl;
+  //g_buff.emit(s);
 }
 
 void semanticError(string s) {

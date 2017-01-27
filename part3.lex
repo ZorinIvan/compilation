@@ -27,7 +27,7 @@ comment    	(\/\/[^\n]*)
 whitespace	([\t\n\r ])
 digit		([0-9])
 uint		({digit}+)
-int 		({uint}|-{uint})
+int 		({uint})
 real		({int}\.{uint})
 num			({int}|{real})
 %%
@@ -61,19 +61,20 @@ return						{createYylval(12, NULL); return RETURN_TOK;}
 defstruct					{createYylval(13, NULL); return DEFSTRUCT_TOK;}
 extern						{createYylval(14, NULL); return EXTERN_TOK;}
 ==|<>|<|<=|>|>= 			{createYylval(-1, yytext); return REL_OP;} 
-[+-]					    {createYylval(-1, yytext); return ADD_OP;}
 [*/]					    {createYylval(-1, yytext); return MUL_OP;}
 \=						  	{createYylval(-18, yytext); return ASSIGN_OP;}
 &&						    {createYylval(-19, yytext); return AND_OP;}
 \|\|					    {createYylval(-20, yytext); return OR_OP;}
+[+-]					    {createYylval(-1, yytext); return ADD_OP;}
 !						    {createYylval(-21, yytext); return NOT_OP;}
 ({int})						{createYylval(-22, yytext); yylval.type = INT; return NUM;}
 ({real})					{createYylval(-22, yytext); yylval.type = REAL; return NUM;}
 ({id})						{createYylval(-23, yytext); return ID;}
+
 ({str})						{char* res = strdup(yytext); res++; *(res+strlen(res)-1) = '\0'; createYylval( -24, res); return STRING;}
 
 
-.           	printf( "\nLexical error: '%s' in line number %d\n", yytext, yylineno ); exit(1);
+.       cerr<<  "Lexical error: " << yytext << " in line number " << yylineno; exit(1);
 
 %%
 

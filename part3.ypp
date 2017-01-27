@@ -194,7 +194,7 @@ FDEFS: FDEFS M1 TYPE ID LP FUNC_ARGLIST_FULL RP{
           semanticError("wrong type of function parameter");
         }
         else{
-          cout<< entry.type << " " << it->first;
+          //cout<< entry.type << " " << it->first;
          if(!f.insert(entry.type, it->first)) semanticError("Err");
         }
 		
@@ -355,7 +355,7 @@ DCL: ID COL TYPE
 } 
     |
 ID COL ID { 
-  struct_table.print();//debug
+ // struct_table.print();//debug
    Debug("ID COL ID ");
 	int offset = struct_table.getOffset($3.content); //check if struct $3 exists
 	if (offset == -1){
@@ -472,7 +472,7 @@ WRITE: WRITE_TOK LP EXP RP SC {
 
 READ: READ_TOK LP LVAL RP SC {
    Debug(" READ: READ_TOK LP LVAL RP SC ");
-   symbol_table.print(); //debug
+   //symbol_table.print(); //debug
     
     if($3.type != INT && $3.type != REAL) {
       semanticError("unknown type for READ");
@@ -492,8 +492,8 @@ READ: READ_TOK LP LVAL RP SC {
 
 ASSN: LVAL ASSIGN_OP EXP SC {
  Debug(" ASSN: LVAL ASSIGN_OP EXP SC ");
-  struct_table.print();//debug
-  symbol_table.print(); //debug
+  //struct_table.print();//debug
+  //symbol_table.print(); //debug
   
   /**
   * If LVAL is a name of variable OR a struct field then:
@@ -587,10 +587,10 @@ CNTRL: IF_TOK BEXP THEN_TOK M STMT  ELSE_TOK  N M STMT {
 	tmp = merge($5.next_list, $7.next_list);
   	$$.next_list = merge(tmp, $9.next_list);
   
-	for (auto& field : $$.next_list) { //find a field with the name $3
-    cout<<  "fggggggggggggggggggggggggggggggggggggggggggggggggggggggggg"<< endl;
-    cout << field <<  endl;
-  }
+//	for (auto& field : $$.next_list) { //find a field with the name $3
+   // cout<<  "fggggggggggggggggggggggggggggggggggggggggggggggggggggggggg"<< endl;
+   // cout << field <<  endl;
+ // }
 			
  // $$.next_list = merge($5.next_list, $9.next_list);
 }
@@ -858,8 +858,8 @@ STREF: ID LS ID RS {
 		//the variable is a struct. Get all fields that are defined for this struct 
 		list<Entry> fields = struct_table.get(sEntry.struct_type); 
 		bool found = false;
-  cout << $1.content << " " << $3.content << endl;
-  symbol_table.print();
+  //cout << $1.content << " " << $3.content << endl;
+ // symbol_table.print();
 		for (auto& field : fields){ //find a field with the name $3
       cout << field.name << " " << $3.content << endl;
 			if(field.name == $3.content){
@@ -1019,7 +1019,7 @@ CALL_ARGS:  EXP {
     $$.parameters.push_back(std::make_pair($1.type,$1.place)); 
   
 }
-    |CALL_ARGS COM EXP {
+    | CALL_ARGS COM EXP {
       Debug("CALL_ARGS COM EXP "); 
       if($3.type != INT && $3.type != REAL){
         semanticError("unknown type of parameters");
@@ -1089,17 +1089,17 @@ void assignStructs(int leftOffset, const list<Entry>& leftStruct , int rightOffs
 }
  
 void Debug(string s){
- // cout << s << endl;
-  //g_buff.emit(s);
+//ma cout << s << endl;
+  g_buff.emit(s);
 }
 
 void semanticError(string s) {
-  printf("Semantic error: '%s' in line number %d\n", s.c_str(), yylineno);
+  cerr << "Semantic error: " << s.c_str()<< " in line number "<< yylineno <<endl;
   exit(3);
 }
 
 void yyerror (const char* str){
-   printf("Syntax error: '%s' in line number %d\n", yytext, yylineno);
+   cerr << "Syntax error: " << yytext << " in line number "<< yylineno;
    exit(2);
 }
 
@@ -1108,7 +1108,7 @@ int main(int argc, char* argv[]) {
 	size_t lastindex;
 	if (argc != 2) {
 		cerr << "Operational error: invalid number of arguments" << endl;
-		exit(1);
+		exit(9);
 	}
 
 	try {
@@ -1119,7 +1119,7 @@ int main(int argc, char* argv[]) {
 	}
 	catch (exception& e){
 		cerr << "Operational error: invalid file type. expecting '.cmm' extension" << endl;
-		exit(1);
+		exit(9);
 	}
 
 	string outFile = inputFile.substr(0, lastindex) + ".rsk";

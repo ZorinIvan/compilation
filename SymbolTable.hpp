@@ -61,6 +61,7 @@ public:
 	//list< SymbolEntry > sortedList;
 	SymbolTable() {
 		offset_stack.push_front(0);
+		push();
 	}
 
 	/**
@@ -126,7 +127,7 @@ public:
 	
 	void print();
 	int currentOffset();
-	void startFunction();
+	void startFunction(int i);
 	void endFunctin();
 };
 

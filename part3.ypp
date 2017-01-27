@@ -188,10 +188,10 @@ FDEFS: FDEFS M1 TYPE ID LP FUNC_ARGLIST_FULL RP{
   Function f = Function($3.type, $4.content, true, g_buff.nextQuad());
   curr_function = $4.content;
 	
-	map<string, SymbolEntry>  table = symbol_table.top();
-  symbol_table.startFunction();
-  f.offset=symbol_table.currentOffset();
-    for(map<string, SymbolEntry>::iterator it = table.begin(); it != table.end(); ++it){
+	map<string, SymbolEntry>  table = symbol_table.pop();
+  symbol_table.startFunction(-2-(table.size()));
+  //f.offset=symbol_table.currentOffset();
+  /*  for(map<string, SymbolEntry>::iterator it = (table.end()-1); it == table.begin(); --it){
         string name = it->first;
         SymbolEntry entry = it->second;
         if(entry.type == STRUCT){
@@ -200,9 +200,23 @@ FDEFS: FDEFS M1 TYPE ID LP FUNC_ARGLIST_FULL RP{
         else{
           //cout<< entry.type << " " << it->first;
          if(!f.insert(entry.type, it->first)) semanticError("Err");
+         if(!symbol_table.insert(it->first, entry.type, 1)) semanticError("Err");
         }
 		
-	}
+	}*/
+  for(auto& it : $6.dclparam ){
+      Type type = it.first;
+      string name = it.second;
+         if(type == STRUCT){
+          semanticError("wrong type of function parameter");
+        }
+        else{
+          //cout<< entry.type << " " << it->first;
+         if(!f.insert(type, name)) semanticError("Err");
+         if(!symbol_table.insert(name, type, 1)) semanticError("Err");
+        }
+  }
+  
    function_table.push(f);
 	
 	//reset register bank!
@@ -256,7 +270,7 @@ Debug("FDEFS EXTERN_TOK TYPE ID LP FUNC_ARGLIST_FULL RP SC" );
 
 FUNC_ARGLIST_FULL: FUNC_ARGLIST {
   Debug("FUNC_ARGLIST_FULL: FUNC_ARGLIST" );
-              
+     $$.dclparam = $1.dclparam;         
 }
   |
   /*epsilon*/
@@ -267,8 +281,12 @@ FUNC_ARGLIST_FULL: FUNC_ARGLIST {
 
 FUNC_ARGLIST:	FUNC_ARGLIST COM DCL {
                Debug("FUNC_ARGLIST COM DCL" );
+  std::list<std::pair<Type,string>> tmp;
+  tmp.merge($1.dclparam);
+    tmp.merge($3.dclparam);
 
-
+ // $1.dclparam.merge($3.dclparam);
+  $$.dclparam = tmp;
 	if($3.type == STRUCT){
       semanticError("undefined parameter type");
 	}
@@ -278,6 +296,7 @@ FUNC_ARGLIST:	FUNC_ARGLIST COM DCL {
    
     if($1.type == STRUCT){
       semanticError("undefined parameter type");
+      $$.dclparam = $1.dclparam;
 	  }
   }
 ;
@@ -315,7 +334,7 @@ BLK: DECLARATIONS LC LIST M RC {
  }
 ;	
 
-DECLARATIONS: VAR_TOK M1 DECLARLIST  
+DECLARATIONS: VAR_TOK DECLARLIST  
 { 
 	/**
 	* 	All variables of the current scope are in the symbol table.
@@ -324,14 +343,15 @@ DECLARATIONS: VAR_TOK M1 DECLARLIST
 	*/
   //Debug
   Debug("DECLARATIONS: VAR_TOK M1 DECLARLIST ");
-  cout << "current offset is" << " "<< symbol_table.currentOffset() << endl;
+ // cout << "current offset is" << " "<< symbol_table.currentOffset() << endl;
 	
 	ostringstream os;
 	os << "ADD2I I2 I1 " << symbol_table.currentOffset();//-prev_offset;
-  cout << "current offset is" << " "<< symbol_table.currentOffset() << endl;
+  //cout << "current offset is" << " "<< symbol_table.currentOffset() << endl;
 
 	g_buff.emit(os.str());		
-	
+ // $$.dclparam = $1.dclparam;
+	 symbol_table.push();
 }
                               |
                                 /*epsilon*/
@@ -340,10 +360,11 @@ DECLARATIONS: VAR_TOK M1 DECLARLIST
 
 DECLARLIST: DECLARLIST DCL SC 
 {  Debug("DECLARLIST: DECLARLIST DCL SC  ");
-	
+	//$$.dclparam = $1.dclparam.merge($2.dclparam);
 }
 | DCL SC
 {  Debug(" DCL SC  ");
+ // $$.dclparam = $1.dclparam;
 }
 ;		
 
@@ -359,7 +380,7 @@ DCL: ID COL TYPE
      // os1 << $$.content << " " << $$.type;
       Debug("DCL: ID COL TYPE ");
      // Debug(os1.str());
-  
+   $$.dclparam.push_back(std::make_pair($3.type,$1.content)); 
 } 
     |
 ID COL ID { 
@@ -384,10 +405,14 @@ ID COM DCL {
 	$$.type = $3.type;
 	$$.offset = $3.offset;
   $$.struct_type = $3.struct_type;
-  if($$.type != STRUCT)
-	  if(!symbol_table.insert($1.content, $3.type, 1)) semanticError("multiple deffinition of the variable in the scope");
-  else
-    if(!symbol_table.insertStruct($1.content, $$.struct_type, $$.offset)) semanticError("multiple deffinition of the variable in the scope");
+  if($$.type != STRUCT){
+	  if(!symbol_table.insert($1.content, $3.type, 1)) 
+      semanticError("multiple deffinition of the variable in the scope");
+  }
+  else{
+    if(!symbol_table.insertStruct($1.content, $$.struct_type, $$.offset))
+      semanticError("multiple deffinition of the variable in the scope");
+  }
   //Debug
   //ostringstream os1;
  // os1 << $$.content << " " << $$.type;
@@ -439,6 +464,7 @@ STMT:
 STMT_RETURN:	RETURN_TOK LP EXP RP SC {
     Debug("STMT_RETURN:	RETURN_TOK LP EXP RP SC");
       string type;
+      if(curr_function == "main") semanticError("return in main");
       if($3.type != function_table.get(curr_function)->returnType) semanticError("unknown type return");
      // g_buff.emit ("COPYI I2 I1");
       type = ($3.type==INT) ? "I" : "R";
@@ -789,7 +815,7 @@ EXP: EXP ADD_OP EXP
        
 		ostringstream os;
 		if($$.type == INT){
-			os << "LOADI !!!!!!!!!!!!!!!!!!!!";
+			os << "LOADI ";
       os << $$.place << " I1 " << $$.offset;
 		  g_buff.emit(os.str());	
 		}
@@ -871,7 +897,7 @@ STREF: ID LS ID RS {
   //cout << $1.content << " " << $3.content << endl;
  // symbol_table.print();
 		for (auto& field : fields){ //find a field with the name $3
-      cout << field.name << " " << $3.content << endl;
+      //cout << field.name << " " << $3.content << endl;
 			if(field.name == $3.content){
 				found = true;
 				$$.content = field.name;
@@ -1077,6 +1103,7 @@ Debug("N");
 	g_buff.emit("UJUMP ");
 }
 
+
 M1: {
 Debug("M1 "); 
   symbol_table.push();
@@ -1124,8 +1151,8 @@ void assignStructs(int leftOffset, const list<Entry>& leftStruct , int rightOffs
 }
  
 void Debug(string s){
-//ma cout << s << endl;
-  //g_buff.emit(s);
+ //cout << s << endl;
+ // g_buff.emit(s);
 }
 
 void semanticError(string s) {

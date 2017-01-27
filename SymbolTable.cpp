@@ -84,21 +84,23 @@ int SymbolTable::currentOffset(){
 	return offset_stack.front();
 }
 
-void SymbolTable::startFunction(){
-	 offset_stack.push_front(0);
-	for (auto& field : symbol_stack){
+void SymbolTable::startFunction(int i){
+	 offset_stack.push_front(i);
+	push();
+	/*for (auto& field : symbol_stack){
 		for(map<string, SymbolEntry >::iterator it = field.begin(); it != field.end(); it++){
 			it->second.offset = -(it->second.offset) -1 ;
 		}
-	}
+	}*/
 }
 
 void SymbolTable::endFunctin(){
 	offset_stack.pop_front();
-	for (auto& field : symbol_stack){
+	//pop();
+	/*for (auto& field : symbol_stack){
 		for(map<string, SymbolEntry >::iterator it = field.begin(); it != field.end(); it++){
 			it->second.offset = -(it->second.offset) -1 ;
 		}
-	}
+	}*/
 }
 

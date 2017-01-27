@@ -27,6 +27,7 @@ typedef struct
 	list<int> next_list; 
 	
 	std::list<std::pair<Type,string>> parameters;
+	std::list<std::pair<Type,string>> dclparam;
 
 } yystype;
 

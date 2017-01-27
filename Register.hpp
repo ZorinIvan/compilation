@@ -9,8 +9,9 @@ public:
 	Register();
 	~Register();
 	static string getNewReg(Type type);
+	static void reset();
 
-private:
+
 	static int intRegCnt;
 	static int realRegCnt;
 };

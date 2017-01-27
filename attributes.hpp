@@ -3,6 +3,7 @@
 
 #include <string>
 #include <list>
+#include <map>
 #include <stack>
 //#include "buffer.hpp"
 
@@ -24,6 +25,8 @@ typedef struct
 	list<int> true_list; 
 	list<int> false_list; 
 	list<int> next_list; 
+	
+	std::list<std::pair<Type,string>> parameters;
 
 } yystype;
 

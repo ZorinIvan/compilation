@@ -1,11 +1,12 @@
 #include "Register.hpp"
 
 
-int Register::intRegCnt = 1;
+int Register::intRegCnt = 3;
 int Register::realRegCnt = 0;
 
 Register::Register()
 {
+	
 }
 
 
@@ -22,4 +23,9 @@ string Register::getNewReg(Type type) {
 	int regNum = realRegCnt;
 	realRegCnt++;
 	return("R" + to_string(regNum));
+}
+
+void Register::reset(){
+	intRegCnt = 3;
+	realRegCnt = 0;
 }

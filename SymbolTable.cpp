@@ -15,6 +15,7 @@ void SymbolTable::push() {
 	symbol_stack.push_front(map<string, SymbolEntry>());
 
 	offset_stack.push_front(offset_stack.front());
+//	sortedList = list< SymbolEntry > ();
 }
 
 map<string, SymbolEntry> SymbolTable::pop() {
@@ -51,8 +52,10 @@ void SymbolTable::insertStruct(string name, string struct_type, int offset) {
 	map<string, SymbolEntry>& top_map = symbol_stack.front();
 
 	top_map[name] = SymbolEntry(STRUCT, offset_stack.front(), offset, false, struct_type);
-
+//	sortedList.push_back(SymbolEntry(STRUCT, offset_stack.front(), offset, false, struct_type));
+	
 	offset_stack.front() = offset_stack.front() + offset;
+	
 }
 
 void SymbolTable::print(){
@@ -75,3 +78,4 @@ void SymbolTable::print(){
 int SymbolTable::currentOffset(){
 	return offset_stack.front();
 }
+

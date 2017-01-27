@@ -17,6 +17,7 @@ public:
 	void emit(const string code);
 	void backpatch(list<int>& list, int line);
 	int nextQuad();
+	void insertHeader(string line);
 private:
 	vector<string> bufferList;
 };

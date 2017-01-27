@@ -58,6 +58,7 @@ class SymbolTable {
 	list< int > offset_stack;
 
 public:
+	//list< SymbolEntry > sortedList;
 	SymbolTable() {
 		offset_stack.push_front(0);
 	}
@@ -125,6 +126,7 @@ public:
 	
 	void print();
 	int currentOffset();
+	
 };
 
 

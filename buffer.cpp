@@ -11,10 +11,13 @@ void Buffer::emit(const string code) {
 	bufferList.push_back(code);
 }
 
-
+void Buffer::insertHeader(string line){
+        vector<string>::iterator it = this->bufferList.begin();
+		this->bufferList.insert(it,line);
+}
 
 int Buffer::nextQuad() {
-	return bufferList.size() ;
+	return bufferList.size() +1;
 }
 
 
@@ -30,7 +33,7 @@ void Buffer::backpatch(std::list<int>& l, int line) {
 	ostringstream os;
 	os << line;
 	for (list<int>::iterator i = l.begin(); i != l.end(); i++) {
-		bufferList[*i] += os.str();
+		bufferList[*i-1] += os.str();
 	}
 }
 

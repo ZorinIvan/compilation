@@ -9,7 +9,7 @@
 	#include "SymbolTable.hpp"
 	#include "StructTable.hpp"
   #include "attributes.hpp"
-
+  #include "Function.hpp"
   
   extern char* yytext;
   extern int yylineno;
@@ -27,6 +27,9 @@
   
   SymbolTable symbol_table;
   StructTable struct_table;
+  FunctionTable function_table;
+  string curr_function;
+  bool isMain;
   Buffer g_buff;
 %}
 /******************* rules *************************/
@@ -59,10 +62,85 @@
   
 %%
 /************************ C user routines **************************/
-PROGRAM: TDEFS N FDEFS M MAIN_FUNCTION {//TODO
+PROGRAM: TDEFS N FDEFS M MAIN_FUNCTION {
       //Debug
   Debug("PROGRAM: TDEFS FDEFS MAIN_FUNCTION" );
-  
+    //making the halt line and adding the header to the buffer 
+	vector<string> implemented;
+	vector<string> unimplemented;
+	vector<string> header;
+	
+	
+	
+	if(isMain){
+		//the current file that is parsed has the main 
+		header.push_back("<main>");
+		g_buff.backpatch($2.next_list,$4.address);
+		g_buff.emit("HALT");
+	}
+	else{
+		// empty
+		header.push_back("<empty>");
+		g_buff.backpatch($2.next_list,0);
+	}
+	//add the <header> as the last line
+		header.push_back("<header>");
+	
+	unimplemented.push_back("<unimplemented>");
+	implemented.push_back("<implemented>");
+	bool firstFlag = true;
+	for(map<string,Function>::iterator it = function_table.table.begin(); it != function_table.table.end(); ++it){
+		if(it->second.implemented){
+			
+				implemented.push_back(" ");
+				implemented.push_back(it->first);
+					
+				if(it->second.startLine > 0){
+					implemented.push_back(",");
+           implemented.push_back(to_string(it->second.startLine));	
+         }
+         else
+					 semanticError("Not implemented");
+		}
+    
+		else{
+			//<unimplemented>
+			if(!firstFlag){
+			     unimplemented.push_back(",");
+		   }
+			firstFlag = false;
+		  unimplemented.push_back(" ");
+			unimplemented.push_back(it->first);
+			vector<int>::iterator itVec = it->second.calledFrom.begin();
+			while( itVec != it->second.calledFrom.end() ){
+					  unimplemented.push_back(",");
+						unimplemented.push_back(to_string(*itVec));
+						++itVec;
+			}
+		}		
+	}
+	
+	
+	string unimplementedString;
+	for(auto s : unimplemented){
+			unimplementedString += s;
+	}
+	vector<string>:: iterator its = header.begin();
+	header.insert(its,unimplementedString);
+	
+	string implementedString;
+	for(auto s : implemented){
+		implementedString += s;
+	}
+	vector<string>:: iterator itss = header.begin();
+	header.insert(itss,implementedString);
+	
+	vector<string>:: iterator itsss = header.begin();
+	header.insert(itsss,"</header>");
+	
+	for(auto line : header){
+	  g_buff.insertHeader(line);
+	} 
   
 }
 ;
@@ -81,7 +159,7 @@ TDEFS: TDEFS M1 DEFSTRUCT_TOK LC DECLARLIST RC ID SC {
 	struct_table.push($7.content); //insert a new struct type
 	map<string, SymbolEntry>  table = symbol_table.pop(); //pops all fields of the struct that were declared before
 	
-	for(map<string, SymbolEntry>::iterator it = table.begin(); it != table.end(); it++){
+	for(map<string, SymbolEntry>::iterator it = table.begin(); it != table.end(); ++it){
 		string name = it->first;
 		SymbolEntry entry = it->second;
 		if(entry.type == STRUCT){
@@ -97,54 +175,139 @@ TDEFS: TDEFS M1 DEFSTRUCT_TOK LC DECLARLIST RC ID SC {
  | /*epsilon*/
              
 ;	
-
-FDEFS: FDEFS TYPE ID LP FUNC_ARGLIST_FULL RP BLK {//TODO
+//      1     2  3    4  5   6               7
+FDEFS: FDEFS M1 TYPE ID LP FUNC_ARGLIST_FULL RP{
+  
+  // All fields of the function are in the top of symbol table
+	// Define a new function 
+  if(function_table.get($4.content)!= NULL) semanticError("function with such name already exists");
+	
+  Function f = Function($3.type, $4.content, true, g_buff.nextQuad());
+  curr_function = $4.content;
+	
+	map<string, SymbolEntry>  table = symbol_table.top();
+  
+    for(map<string, SymbolEntry>::iterator it = table.begin(); it != table.end(); ++it){
+        string name = it->first;
+        SymbolEntry entry = it->second;
+        if(entry.type == STRUCT){
+          semanticError("wrong type of function parameter");
+        }
+        else{
+          cout<< entry.type << " " << it->first;
+         if(!f.insert(entry.type, it->first)) semanticError("Err");
+        }
+		
+	}
+   function_table.push(f);
+	
+	//reset register bank!
+	Register::reset();
+  
+}BLK {
   //Debug
   Debug("FDEFS: FDEFS TYPE ID LP FUNC_ARGLIST_FULL RP BLK");
-                                  }
-                                |
-                                  FDEFS EXTERN_TOK TYPE ID LP FUNC_ARGLIST_FULL RP SC {//TODO
+  	//not found a return
+	//buffer.emit("COPYI I2 I1");
+	g_buff.emit("RETRN"); //goto IO
+	//reset register bank!
+	//Register::reset();
+}
+
+| FDEFS EXTERN_TOK TYPE ID LP FUNC_ARGLIST_FULL RP SC {
 
 Debug("FDEFS EXTERN_TOK TYPE ID LP FUNC_ARGLIST_FULL RP SC" );
-                                  }		
-                                |
-                                  /*epsilon*/
+	    // All fields of the function are in the top of symbol table
+	// Define a new function 
+  if(function_table.get($4.content)!= NULL) semanticError("function with such name already exists");
+	
+  Function f = Function($3.type, $4.content, false, -1);
+ 
+	
+	map<string, SymbolEntry>  table = symbol_table.top();
+  
+    for(map<string, SymbolEntry>::iterator it = table.begin(); it != table.end(); ++it){
+        string name = it->first;
+        SymbolEntry entry = it->second;
+        if(entry.type == STRUCT){
+          semanticError("wrong type of function parameter");
+        }
+        else{
+         if(!f.insert(entry.type, it->first)) semanticError("Err");
+        }
+		
+	}
+    curr_function = $4.content;
+   function_table.push(f);
+	
+	//forget temporrary registers! reset register bank!
+	//bank = RegistersBank();
+
+}		
+|
+ /*epsilon*/
                
 ;
 
-FUNC_ARGLIST_FULL: FUNC_ARGLIST {//TODO
+FUNC_ARGLIST_FULL: FUNC_ARGLIST {
   Debug("FUNC_ARGLIST_FULL: FUNC_ARGLIST" );
-                          
-                                  }
-                                |
-                                  /*epsilon*/
+              
+}
+  |
+  /*epsilon*/
+  
                       
 
 ;		
 
-FUNC_ARGLIST:	FUNC_ARGLIST COM DCL {//TODO
+FUNC_ARGLIST:	FUNC_ARGLIST COM DCL {
                Debug("FUNC_ARGLIST COM DCL" );
 
-                                  }
-                                |
-                                  DCL {//TODO
-                      Debug("DCL" );
-                                  }
+
+	if($3.type == STRUCT){
+      semanticError("undefined parameter type");
+	}
+	
+ }
+ | DCL {
+   
+    if($1.type == STRUCT){
+      semanticError("undefined parameter type");
+	  }
+  }
 ;
 
-MAIN_FUNCTION: MAIN_TOK BLK {//TODO
+MAIN_FUNCTION: MAIN_TOK {
+  curr_function = "main";
+  g_buff.emit("COPYI I0 0");
+  g_buff.emit("COPYI I1 0");
+  g_buff.emit("COPYI I2 0");
+  
+}BLK {
      Debug("MAIN_TOK BLK" );
-                                  } 
-                                |
+     isMain = true;
+} 
+| {isMain = false;}
                                   /*epsilon*/ 
   ;		
 
-BLK: DECLARATIONS LC LIST M RC {//TODO
+BLK: DECLARATIONS LC LIST M RC {
      // end of scope
    Debug("BLK: DECLARATIONS LC LIST RC" );
    g_buff.backpatch($3.next_list , $4.address);
-	 symbol_table.pop();
-                              }
+    map<string, SymbolEntry> table = symbol_table.pop();
+    int sum = 0;
+    for(map<string, SymbolEntry>::iterator it = table.begin(); it != table.end(); ++it){
+        string name = it->first;
+        SymbolEntry entry = it->second;
+        sum += entry.size;
+	}
+  	ostringstream os;
+		os << "SUBTI " << "I2 " << "I2 "<< sum; //move frame
+		g_buff.emit(os.str());
+	  Register::reset();
+  
+ }
 ;	
 
 DECLARATIONS: VAR_TOK M1 DECLARLIST  
@@ -265,8 +428,15 @@ STMT:
                                 BLK { Debug("BLK");}
 ;	
 
-STMT_RETURN:	RETURN_TOK LP EXP RP SC {//TODO
+STMT_RETURN:	RETURN_TOK LP EXP RP SC {
     Debug("STMT_RETURN:	RETURN_TOK LP EXP RP SC");
+      string type;
+      if($3.type != function_table.get(curr_function)->returnType) semanticError("unknown type return");
+      type = ($3.type==INT) ? "I" : "R";
+      g_buff.emit("STOR" + type + " " + $3.place + " I1 -1");
+      g_buff.emit("RETRN");
+      
+  
 }
 ;	
 
@@ -355,7 +525,7 @@ ASSN: LVAL ASSIGN_OP EXP SC {
  
   }
   
-  else{ //Assigning struct TODO:
+  else{ //Assigning struct:
      if($1.struct_type != $3.struct_type){
         semanticError("Different struct types while assigning");
      }
@@ -424,7 +594,7 @@ CNTRL: IF_TOK BEXP THEN_TOK M STMT  ELSE_TOK  N M STMT {
 			
  // $$.next_list = merge($5.next_list, $9.next_list);
 }
-      | IF_TOK BEXP THEN_TOK M STMT N {
+      | IF_TOK BEXP THEN_TOK M STMT  {
          Debug("IF_TOK BEXP THEN_TOK M STMT ");
 			g_buff.backpatch($2.true_list, $4.address);
 			$$.next_list = merge($2.false_list, $5.next_list);
@@ -502,9 +672,9 @@ BEXP: BEXP OR_OP M BEXP {
 			else{
 				compare << "I ";
 			}
-			
-			compare << Register::getNewReg(INT) <<  " " << $1.place << $2.place;
-			branch << Register::getNewReg(INT) << " ";
+			string reg = Register::getNewReg(INT);
+			compare << reg <<  " " << $1.place << " " << $3.place;
+			branch << reg << " ";
 			
 			g_buff.emit(compare.str());
 			$$.false_list = makelist(g_buff.nextQuad());
@@ -539,10 +709,10 @@ EXP: EXP ADD_OP EXP
 	
 	
 			if ($2.content == "+") {
-				g_buff.emit("ADD2" + T + " " + $$.place + " " + $1.place + " " + $2.place);
+				g_buff.emit("ADD2" + T + "" + $$.place + "" + $1.place + "" + $3.place);
 			} 
 			else { // "-"
-				g_buff.emit("SUBT" + T + " " + $$.place + " " + $1.place + " " + $2.place);
+				g_buff.emit("SUBT" + T + "" + $$.place + "" + $1.place + "" + $3.place);
 			
 			}	
 		}
@@ -562,10 +732,10 @@ EXP: EXP ADD_OP EXP
 	
 	
 			if ($2.content == "*") {
-				g_buff.emit("MULT" + T + " " + $$.place + " " + $1.place + " " + $2.place);
+				g_buff.emit("MULT" + T + " " + $$.place + " " + $1.place + " " + $3.place);
 			} 
 			else { // "/"
-				g_buff.emit("DIVD" + T + " " + $$.place + " " + $1.place + " " + $2.place);
+				g_buff.emit("DIVD" + T + " " + $$.place + " " + $1.place + " " + $3.place);
 			
 			}	
 		}
@@ -587,7 +757,7 @@ EXP: EXP ADD_OP EXP
 			}
 			
 			else{//REAL
-				g_buff.emit("CRTOR " + $$.place + $4.place);
+				g_buff.emit("CITOR " + $$.place + " " + $4.place);
 			}
 		
     }
@@ -624,7 +794,7 @@ EXP: EXP ADD_OP EXP
     }
 
    |
-     STREF {//TODO bug
+     STREF {
          Debug("STREF  ");
 		 /* 
 		  * $1 is a field in the struct.
@@ -759,26 +929,104 @@ STREF: ID LS ID RS {
 }
 ;	
 
-CALL: CALL_TOK ID LP CALL_ARGS_FULL RP {//TODO
+CALL: CALL_TOK ID LP CALL_ARGS_FULL RP {
    Debug("CALL: CALL_TOK ID LP CALL_ARGS_FULL RP ");
-
-                          }
+    Function* f = function_table.get($2.content);
+    if(f == NULL) {
+      semanticError("undefined function");
+    }
+    
+    list<Param> parameters = f->parameters;
+    list<Type> tmp1, tmp2;
+	
+	  for (auto& it : $4.parameters){
+		  tmp1.push_back(it.first);
+    }
+    
+    for (auto& it : f->parameters){
+		  tmp2.push_back(it.type);
+    }
+    
+    if(tmp1 != tmp2){
+      semanticError("parameteres of function does not match");
+    }
+    
+    //save used registers
+    int cnt = 0;
+    for(int i = 0; i != Register::intRegCnt ; ++i) {
+      {
+        g_buff.emit("STORI I" + to_string(i) + " I2 " + to_string(cnt));
+        ++cnt;
+      }
+    }
+    for(int i = 0; i != Register::realRegCnt ; ++i) {
+      
+      g_buff.emit("STORR R" + to_string(i) + " I2 " + to_string(cnt));
+      ++cnt;
+    }
+  
+  
+  
+    g_buff.emit("ADD2I I2 I2 " + to_string(cnt+1));
+  
+    g_buff.emit("COPYI I1 I2");
+    
+    f->calledFrom.push_back(g_buff.nextQuad());
+     g_buff.emit("JLINK " + to_string(f->startLine));
+  
+    
+    g_buff.emit("COPYI I2 I1");
+  
+   // Load the return value of the function
+	string type = f->returnType == INT ? "I" : "R";
+  string ret_reg =  Register::getNewReg(f->returnType );
+	g_buff.emit( "LOAD" + type + " " + ret_reg  + " I2 -1");
+	$$.place = ret_reg; // Save the return register
+	$$.type = f->returnType;
+  
+	// Restore I2
+	g_buff.emit("SUBTI I2 I2 " + to_string(cnt + 1));
+  
+	// Restore all registers from stack
+	cnt = 0;
+	for (int i = 0; i < Register::intRegCnt ; i++, cnt++) {
+		if (i == 2) continue; // No need to reload I2
+		g_buff.emit("LOADI I" + to_string(i) + " I2 " + to_string(cnt));
+	}
+	for (int i = 0; i < Register::realRegCnt; i++, cnt++) {
+		string line = "LOADR R" + to_string(i) + " I2 " + to_string(cnt);
+		g_buff.emit(line);
+	}
+ 
+  
+}
 ;	
 
-CALL_ARGS_FULL: CALL_ARGS {//TODO
+CALL_ARGS_FULL: CALL_ARGS {
                              Debug("CALL_ARGS_FULL: CALL_ARGS "); 
+  $$.parameters == $1.parameters;
                           }
                         |
                           /*epsilon*/
          ;	
 
-CALL_ARGS:  EXP {//TODO
+CALL_ARGS:  EXP {
               Debug("CALL_ARGS:  EXP "); 
-               }
-    |
-     CALL_ARGS COM EXP {//TODO
- Debug("CALL_ARGS COM EXP "); 
-                        }
+        if($1.type != INT && $1.type != REAL){
+         semanticError("unknown type of parameters");
+        }
+  	$$.parameters.clear();
+    $$.parameters.push_back(std::make_pair($1.type,$1.place)); 
+  
+}
+    |CALL_ARGS COM EXP {
+      Debug("CALL_ARGS COM EXP "); 
+      if($3.type != INT && $3.type != REAL){
+        semanticError("unknown type of parameters");
+      }
+      $$.parameters = $1.parameters;
+      $$.parameters.push_back(std::make_pair($3.type,$3.place)); 
+}
 ;
 
 /**************** Markers *****************/

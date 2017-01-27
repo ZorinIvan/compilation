@@ -29,3 +29,9 @@ void Register::reset(){
 	intRegCnt = 3;
 	realRegCnt = 0;
 }
+
+
+void  Register::decrement(Type type){
+	if(type == INT) intRegCnt--;
+	else realRegCnt--;
+}

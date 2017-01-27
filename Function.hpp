@@ -34,7 +34,7 @@ typedef struct _entry_t{
 	
 	
 	_entry_t(Type returnType, string name, bool implemented, int startLine) : 
-		returnType(returnType), name(name), implemented(implemented), startLine(startLine) {offsetNextParam = 0;}
+		returnType(returnType), name(name), implemented(implemented), startLine(startLine) {offsetNextParam = 0; parameters=list<Param>();}
 	
 	bool insert(Type type, string name);
 } Function;

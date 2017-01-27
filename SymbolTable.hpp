@@ -71,7 +71,7 @@ public:
 	* @requires: name != null, offset > 0;
 	*
 	*/
-	void insert(string name, Type type, int offset);
+	bool insert(string name, Type type, int offset);
 
 	/**
 	* Adds a new "scope" to the symbol table
@@ -122,11 +122,12 @@ public:
 	* @requires: name != null, offset > 0;
 	*
 	*/
-	void insertStruct(string name, string struct_type, int offset);
+	bool insertStruct(string name, string struct_type, int offset);
 	
 	void print();
 	int currentOffset();
-	
+	void startFunction();
+	void endFunctin();
 };
 
 

@@ -31,6 +31,7 @@
   string curr_function;
   bool isMain;
   Buffer g_buff;
+  int prev_offset = 0;
 %}
 /******************* rules *************************/
 
@@ -38,7 +39,9 @@
 
 
 %token NUM ID  STRING
-%token REAL_TOK INT_TOK WRITE_TOK READ_TOK WHILE_TOK DO_TOK IF_TOK
+%token REAL_TOK 
+%token INT_TOK 
+%token WRITE_TOK READ_TOK WHILE_TOK DO_TOK IF_TOK
 %token THEN_TOK ELSE_TOK MAIN_TOK VAR_TOK CALL_TOK RETURN_TOK DEFSTRUCT_TOK EXTERN_TOK
 %token COM SC COL
 
@@ -186,7 +189,8 @@ FDEFS: FDEFS M1 TYPE ID LP FUNC_ARGLIST_FULL RP{
   curr_function = $4.content;
 	
 	map<string, SymbolEntry>  table = symbol_table.top();
-  
+  symbol_table.startFunction();
+  f.offset=symbol_table.currentOffset();
     for(map<string, SymbolEntry>::iterator it = table.begin(); it != table.end(); ++it){
         string name = it->first;
         SymbolEntry entry = it->second;
@@ -209,6 +213,7 @@ FDEFS: FDEFS M1 TYPE ID LP FUNC_ARGLIST_FULL RP{
   Debug("FDEFS: FDEFS TYPE ID LP FUNC_ARGLIST_FULL RP BLK");
   	//not found a return
 	//buffer.emit("COPYI I2 I1");
+  symbol_table.endFunctin();
 	g_buff.emit("RETRN"); //goto IO
 	//reset register bank!
 	//Register::reset();
@@ -302,9 +307,9 @@ BLK: DECLARATIONS LC LIST M RC {
         SymbolEntry entry = it->second;
         sum += entry.size;
 	}
-  	ostringstream os;
-		os << "SUBTI " << "I2 " << "I2 "<< sum; //move frame
-		g_buff.emit(os.str());
+  	//ostringstream os;
+		//os << "SUBTI " << "I2 " << "I2 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<< sum; //move frame
+	//	g_buff.emit(os.str());
 	  Register::reset();
   
  }
@@ -319,9 +324,12 @@ DECLARATIONS: VAR_TOK M1 DECLARLIST
 	*/
   //Debug
   Debug("DECLARATIONS: VAR_TOK M1 DECLARLIST ");
+  cout << "current offset is" << " "<< symbol_table.currentOffset() << endl;
 	
 	ostringstream os;
-	os << "ADD2I I2 I1 " << symbol_table.currentOffset();
+	os << "ADD2I I2 I1 " << symbol_table.currentOffset();//-prev_offset;
+  cout << "current offset is" << " "<< symbol_table.currentOffset() << endl;
+
 	g_buff.emit(os.str());		
 	
 }
@@ -345,7 +353,7 @@ DCL: ID COL TYPE
 	$$.content = $1.content;
 	$$.type = $3.type;
 	$$.offset = 1;
-	symbol_table.insert($1.content, $3.type, 1);
+	if(!symbol_table.insert($1.content, $3.type, 1)) semanticError("multiple deffinition of the variable in the scope");
         //Debug
       //ostringstream os1;
      // os1 << $$.content << " " << $$.type;
@@ -365,7 +373,7 @@ ID COL ID {
 	$$.type = STRUCT;
 	$$.offset = offset;
   $$.struct_type = $3.content;
-	symbol_table.insertStruct($1.content, $3.content, offset);
+	if(!symbol_table.insertStruct($1.content, $3.content, offset)) semanticError("multiple deffinition of the variable in the scope");
 	
 } 
     |
@@ -377,9 +385,9 @@ ID COM DCL {
 	$$.offset = $3.offset;
   $$.struct_type = $3.struct_type;
   if($$.type != STRUCT)
-	  symbol_table.insert($1.content, $3.type, 1);
+	  if(!symbol_table.insert($1.content, $3.type, 1)) semanticError("multiple deffinition of the variable in the scope");
   else
-    symbol_table.insertStruct($1.content, $$.struct_type, $$.offset);
+    if(!symbol_table.insertStruct($1.content, $$.struct_type, $$.offset)) semanticError("multiple deffinition of the variable in the scope");
   //Debug
   //ostringstream os1;
  // os1 << $$.content << " " << $$.type;
@@ -432,9 +440,11 @@ STMT_RETURN:	RETURN_TOK LP EXP RP SC {
     Debug("STMT_RETURN:	RETURN_TOK LP EXP RP SC");
       string type;
       if($3.type != function_table.get(curr_function)->returnType) semanticError("unknown type return");
+     // g_buff.emit ("COPYI I2 I1");
       type = ($3.type==INT) ? "I" : "R";
       g_buff.emit("STOR" + type + " " + $3.place + " I1 -1");
       g_buff.emit("RETRN");
+      
       
   
 }
@@ -543,7 +553,7 @@ LVAL: ID {
   Debug(" LVAL: ID ");
 	SymbolEntry sEntry = symbol_table.get($1.content);
 	 //check that a variable is declared
-	if(sEntry.offset < 0){
+	if(sEntry.size < 0){
 		semanticError("A variable is not declared");
 	}
 	
@@ -709,10 +719,10 @@ EXP: EXP ADD_OP EXP
 	
 	
 			if ($2.content == "+") {
-				g_buff.emit("ADD2" + T + "" + $$.place + "" + $1.place + "" + $3.place);
+				g_buff.emit("ADD2" + T + " " + $$.place + " " + $1.place + " " + $3.place);
 			} 
 			else { // "-"
-				g_buff.emit("SUBT" + T + "" + $$.place + "" + $1.place + "" + $3.place);
+				g_buff.emit("SUBT" + T + " " + $$.place + " " + $1.place + " " + $3.place);
 			
 			}	
 		}
@@ -767,7 +777,7 @@ EXP: EXP ADD_OP EXP
 		 
 		 SymbolEntry sEntry = symbol_table.get($1.content);
 		 //check that a variable is declared
-		if(sEntry.offset < 0){
+		if(sEntry.size < 0){
 			semanticError("A variable is not declared");
 		}
 		
@@ -779,7 +789,7 @@ EXP: EXP ADD_OP EXP
        
 		ostringstream os;
 		if($$.type == INT){
-			os << "LOADI ";
+			os << "LOADI !!!!!!!!!!!!!!!!!!!!";
       os << $$.place << " I1 " << $$.offset;
 		  g_buff.emit(os.str());	
 		}
@@ -848,7 +858,7 @@ STREF: ID LS ID RS {
    Debug("STREF: ID LS ID RS ");
 		SymbolEntry sEntry = symbol_table.get($1.content); //get a variable from the symbol table
 		 //check that a variable is declared
-		if(sEntry.offset < 0){
+		if(sEntry.size < 0){
 			semanticError("A variable is not declared");
 		}
 		if(sEntry.type != STRUCT){ //check if the variable is a struct
@@ -955,6 +965,10 @@ CALL: CALL_TOK ID LP CALL_ARGS_FULL RP {
     int cnt = 0;
     for(int i = 0; i != Register::intRegCnt ; ++i) {
       {
+     // { if (i==2)
+     // { cnt++;
+     //   continue;
+    //  }
         g_buff.emit("STORI I" + to_string(i) + " I2 " + to_string(cnt));
         ++cnt;
       }
@@ -964,6 +978,26 @@ CALL: CALL_TOK ID LP CALL_ARGS_FULL RP {
       g_buff.emit("STORR R" + to_string(i) + " I2 " + to_string(cnt));
       ++cnt;
     }
+    
+  
+    for(auto i = $4.parameters.rbegin(); i!=$4.parameters.rend(); ++i){
+      if(i->first == INT){
+          g_buff.emit("STORI " + i->second + " I2 " + to_string(cnt));
+          cnt++;
+      }
+      else{
+          g_buff.emit("STORR " + i->second + " I2 " + to_string(cnt));
+          cnt++;
+      }
+    }
+    
+   /* g_buff.emit("STORI I" + to_string(Register::intRegCnt-1) + " I2 " + to_string(cnt));
+    cnt++;
+    g_buff.emit("STORR R" + to_string(Register::realRegCnt-1) + " I2 " + to_string(cnt));
+     cnt++;*/
+  
+  
+  
   
   
   
@@ -980,6 +1014,7 @@ CALL: CALL_TOK ID LP CALL_ARGS_FULL RP {
    // Load the return value of the function
 	string type = f->returnType == INT ? "I" : "R";
   string ret_reg =  Register::getNewReg(f->returnType );
+  Register::decrement(f->returnType );
 	g_buff.emit( "LOAD" + type + " " + ret_reg  + " I2 -1");
 	$$.place = ret_reg; // Save the return register
 	$$.type = f->returnType;
@@ -990,7 +1025,7 @@ CALL: CALL_TOK ID LP CALL_ARGS_FULL RP {
 	// Restore all registers from stack
 	cnt = 0;
 	for (int i = 0; i < Register::intRegCnt ; i++, cnt++) {
-		if (i == 2) continue; // No need to reload I2
+		if (i == 2) continue; 
 		g_buff.emit("LOADI I" + to_string(i) + " I2 " + to_string(cnt));
 	}
 	for (int i = 0; i < Register::realRegCnt; i++, cnt++) {
@@ -1090,7 +1125,7 @@ void assignStructs(int leftOffset, const list<Entry>& leftStruct , int rightOffs
  
 void Debug(string s){
 //ma cout << s << endl;
-  g_buff.emit(s);
+  //g_buff.emit(s);
 }
 
 void semanticError(string s) {

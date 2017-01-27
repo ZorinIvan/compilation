@@ -2,12 +2,15 @@
 
 
 
-void SymbolTable::insert(string name, Type type, int offset) {
+bool SymbolTable::insert(string name, Type type, int offset) {
 	map<string, SymbolEntry>& top_map = symbol_stack.front();
-
+	if (top_map.find(name) != top_map.end()) {
+		return false;
+	}
 	top_map[name] = SymbolEntry(type, offset_stack.front(), offset, false);
 
 	offset_stack.front() = offset_stack.front() + offset;
+	return true;
 }
 
 
@@ -48,14 +51,16 @@ SymbolEntry SymbolTable::get(string var) {
 	return SymbolEntry(INT, -1, -1, false);
 }
 
-void SymbolTable::insertStruct(string name, string struct_type, int offset) {
+bool SymbolTable::insertStruct(string name, string struct_type, int offset) {
 	map<string, SymbolEntry>& top_map = symbol_stack.front();
-
+	if (top_map.find(name) != top_map.end()) {
+		return false;
+	}
 	top_map[name] = SymbolEntry(STRUCT, offset_stack.front(), offset, false, struct_type);
 //	sortedList.push_back(SymbolEntry(STRUCT, offset_stack.front(), offset, false, struct_type));
 	
 	offset_stack.front() = offset_stack.front() + offset;
-	
+	return true;
 }
 
 void SymbolTable::print(){
@@ -77,5 +82,23 @@ void SymbolTable::print(){
 
 int SymbolTable::currentOffset(){
 	return offset_stack.front();
+}
+
+void SymbolTable::startFunction(){
+	 offset_stack.push_front(0);
+	for (auto& field : symbol_stack){
+		for(map<string, SymbolEntry >::iterator it = field.begin(); it != field.end(); it++){
+			it->second.offset = -(it->second.offset) -1 ;
+		}
+	}
+}
+
+void SymbolTable::endFunctin(){
+	offset_stack.pop_front();
+	for (auto& field : symbol_stack){
+		for(map<string, SymbolEntry >::iterator it = field.begin(); it != field.end(); it++){
+			it->second.offset = -(it->second.offset) -1 ;
+		}
+	}
 }
 
